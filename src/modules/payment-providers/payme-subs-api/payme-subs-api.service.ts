@@ -189,33 +189,44 @@ async verifyCardToken(requestBody: VerifyCardTokenPaymeDtoDto) {
                 incompleteCardNumber: response.data.result.card.number
             });
 
-            if (existingUserCard) {
-                return {
-                    success: false,
-                    error: {
-                        code: -6,
-                        message: 'Bu karta raqam mavjud. Iltimos boshqa karta raqamini tanlang.'
-
-                    }
-                };
-            }
-
             try {
                 const time = new Date().getTime();
-                logger.info(`Creating user card for user ID: ${requestBody.userId}, with card token: ${requestBody.token}`);
-                const userCard = await UserCardsModel.create({
-                    telegramId: user.telegramId,
-                    username: user.username ? user.username : undefined,
-                    incompleteCardNumber: response.data.result.card.number,
-                    cardToken: response.data.result.card.token,
-                    expireDate: response.data.result.card.expire,
-                    userId: requestBody.userId,
-                    planId: requestBody.planId,
-                    verificationCode: requestBody.code,
-                    verified: true,
-                    verifiedDate: new Date(time),
-                    cardType: CardType.PAYME
-                });
+                logger.info(`Processing user card for user ID: ${requestBody.userId}, with card token: ${requestBody.token}`);
+                
+                let userCard;
+                if (existingUserCard) {
+                    // Update existing card
+                    logger.info(`Updating existing card for incomplete number: ${response.data.result.card.number}`);
+                    userCard = await UserCardsModel.findByIdAndUpdate(
+                        existingUserCard._id,
+                        {
+                            cardToken: response.data.result.card.token,
+                            expireDate: response.data.result.card.expire,
+                            verificationCode: requestBody.code,
+                            verified: true,
+                            verifiedDate: new Date(time),
+                            userId: requestBody.userId,
+                            planId: requestBody.planId
+                        },
+                        { new: true }
+                    );
+                } else {
+                    // Create new card
+                    logger.info(`Creating new card for incomplete number: ${response.data.result.card.number}`);
+                    userCard = await UserCardsModel.create({
+                        telegramId: user.telegramId,
+                        username: user.username ? user.username : undefined,
+                        incompleteCardNumber: response.data.result.card.number,
+                        cardToken: response.data.result.card.token,
+                        expireDate: response.data.result.card.expire,
+                        userId: requestBody.userId,
+                        planId: requestBody.planId,
+                        verificationCode: requestBody.code,
+                        verified: true,
+                        verifiedDate: new Date(time),
+                        cardType: CardType.PAYME
+                    });
+                }
 
                 user.subscriptionType = 'subscription'
                 await user.save();

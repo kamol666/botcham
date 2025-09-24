@@ -143,20 +143,46 @@ export class ClickSubsApiService {
 
             const time = new Date().getTime();
             logger.info(`Creating user card for user ID: ${requestBody.userId}, with card token: ${requestBody.card_token}`);
-            const userCard = await UserCardsModel.create({
-                telegramId: user.telegramId,
-                username: user.username ? user.username : undefined,
-                incompleteCardNumber: response.data.card_number,
-                cardToken: requestBodyWithServiceId.card_token,
-                expireDate: requestBody.expireDate,
-                userId: requestBody.userId,
-                planId: requestBody.planId,
-                verificationCode: requestBody.sms_code,
-                verified: true,
-                verifiedDate: new Date(time),
-                cardType: CardType.CLICK
+            
+            // Check if user card already exists with this incomplete card number
+            const existingCard = await UserCardsModel.findOne({
+                incompleteCardNumber: response.data.card_number
+            });
+
+            let userCard;
+            if (existingCard) {
+                // Update existing card
+                logger.info(`Updating existing card for incomplete number: ${response.data.card_number}`);
+                userCard = await UserCardsModel.findByIdAndUpdate(
+                    existingCard._id,
+                    {
+                        cardToken: requestBodyWithServiceId.card_token,
+                        expireDate: requestBody.expireDate,
+                        verificationCode: requestBody.sms_code,
+                        verified: true,
+                        verifiedDate: new Date(time),
+                        userId: requestBody.userId,
+                        planId: requestBody.planId
+                    },
+                    { new: true }
+                );
+            } else {
+                // Create new card
+                logger.info(`Creating new card for incomplete number: ${response.data.card_number}`);
+                userCard = await UserCardsModel.create({
+                    telegramId: user.telegramId,
+                    username: user.username ? user.username : undefined,
+                    incompleteCardNumber: response.data.card_number,
+                    cardToken: requestBodyWithServiceId.card_token,
+                    expireDate: requestBody.expireDate,
+                    userId: requestBody.userId,
+                    planId: requestBody.planId,
+                    verificationCode: requestBody.sms_code,
+                    verified: true,
+                    verifiedDate: new Date(time),
+                    cardType: CardType.CLICK
+                });
             }
-            )
             const endDate = new Date();
             endDate.setDate(endDate.getDate() + 30);
 
