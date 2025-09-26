@@ -85,11 +85,44 @@ export class ClickSubsApiService {
 
             console.log("Cleaned request data:", cleanedRequest);
 
-            const response = await axios.post(
-                `${this.baseUrl}/card_token/request`,
-                cleanedRequest,
-                { headers }
-            );
+            // Retry mexanizmi bilan API ga murojaat qilish
+            let response;
+            let lastError;
+            const maxRetries = 3;
+
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    console.log(`Click API ga murojaat qilish, urinish ${attempt}/${maxRetries}`);
+
+                    response = await axios.post(
+                        `${this.baseUrl}/card_token/request`,
+                        cleanedRequest,
+                        {
+                            headers,
+                            timeout: 45000, // 45 soniya timeout
+                        }
+                    );
+
+                    console.log(`Muvaffaqiyatli javob olindi, urinish ${attempt}`);
+                    break; // Muvaffaqiyatli bo'lsa, loopdan chiqamiz
+
+                } catch (error) {
+                    lastError = error;
+                    console.error(`Click API xatosi, urinish ${attempt}/${maxRetries}:`, error.message);
+
+                    // Agar oxirgi urinish bo'lmasa, kutamiz va qaytadan harakat qilamiz
+                    if (attempt < maxRetries) {
+                        const waitTime = attempt * 2000; // 2s, 4s kutish
+                        console.log(`${waitTime}ms kutib, qaytadan harakat qilish...`);
+                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                    }
+                }
+            }
+
+            if (!response) {
+                console.error('Barcha urinishlar muvaffaqiyatsiz tugadi');
+                throw lastError || new Error('Click API bilan aloqa o\'rnatib bo\'lmadi');
+            }
 
             console.log("Received response data:", response.data);
 
@@ -139,7 +172,10 @@ export class ClickSubsApiService {
             [-401]: 'Autentifikatsiya xatosi',
             [-403]: 'Ruxsat berilmagan',
             [-404]: 'Xizmat topilmadi',
-            [-500]: 'Server ichki xatosi'
+            [-500]: 'Server ichki xatosi',
+            [-1905]: 'Ta\'minotchidan javob yo\'q (timeout xatosi)',
+            [-1906]: 'Tarmoq aloqa xatosi',
+            [-1907]: 'Bank tizimi vaqtincha ishlamaydi'
         };
 
         return errorMessages[errorCode] || `Noma'lum xatolik kodi: ${errorCode}`;
@@ -171,11 +207,44 @@ export class ClickSubsApiService {
 
 
         try {
-            const response = await axios.post(
-                `${this.baseUrl}/card_token/verify`, // Changed endpoint to verify
-                requestBodyWithServiceId,
-                { headers }
-            );
+            // Retry mexanizmi bilan SMS verification
+            let response;
+            let lastError;
+            const maxRetries = 3;
+
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    console.log(`Click SMS verification, urinish ${attempt}/${maxRetries}`);
+
+                    response = await axios.post(
+                        `${this.baseUrl}/card_token/verify`,
+                        requestBodyWithServiceId,
+                        {
+                            headers,
+                            timeout: 45000, // 45 soniya timeout
+                        }
+                    );
+
+                    console.log(`SMS verification muvaffaqiyatli, urinish ${attempt}`);
+                    break;
+
+                } catch (error) {
+                    lastError = error;
+                    console.error(`SMS verification xatosi, urinish ${attempt}/${maxRetries}:`, error.message);
+
+                    // Agar oxirgi urinish bo'lmasa, kutamiz
+                    if (attempt < maxRetries) {
+                        const waitTime = attempt * 2000; // 2s, 4s kutish
+                        console.log(`${waitTime}ms kutib, qaytadan harakat qilish...`);
+                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                    }
+                }
+            }
+
+            if (!response) {
+                console.error('SMS verification barcha urinishlar muvaffaqiyatsiz');
+                throw lastError || new Error('Click SMS verification xatosi');
+            }
 
 
             if (response.data.error_code !== 0) {

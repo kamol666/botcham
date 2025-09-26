@@ -309,7 +309,8 @@ export class ClickService {
       }
 
     } catch (error) {
-      logger.error(`Click API xatosi: ${error.response?.data || error.message}`);
+      const errorMessage = this.handleClickApiError(error, 'obuna bekor qilish');
+      logger.error(`Click obuna bekor qilish xatosi: ${errorMessage}`);
 
       // Agar API ishlamasa, bazadagi statusni o'zgartiramiz
       try {
@@ -347,7 +348,8 @@ export class ClickService {
 
       return response.data?.data || [];
     } catch (error) {
-      logger.error(`Click obunalar ro'yxatini olishda xatolik: ${error.message}`);
+      const errorMessage = this.handleClickApiError(error, 'obunalar ro\'yxatini olish');
+      logger.error(`Click obunalar ro'yxatini olish xatosi: ${errorMessage}`);
       return [];
     }
   }
@@ -373,8 +375,39 @@ export class ClickService {
       logger.info(`Click obunalar: ${successCount} bekor qilindi, ${failedCount} xato`);
       return { success: successCount, failed: failedCount };
     } catch (error) {
-      logger.error(`Barcha Click obunalarni bekor qilishda xatolik: ${error.message}`);
+      const errorMessage = this.handleClickApiError(error, 'barcha obunalarni bekor qilish');
+      logger.error(`Barcha Click obunalarni bekor qilish xatosi: ${errorMessage}`);
       return { success: 0, failed: 0 };
     }
+  }
+
+  // Yangi metod: Click API xatoliklarini batafsil tekshirish
+  private handleClickApiError(error: any, operation: string): string {
+    logger.error(`Click API xatosi ${operation} jarayonida:`, error);
+
+    if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+      return 'Tarmoq aloqa xatosi: Timeout (Server javob bermayapti)';
+    }
+
+    if (error.code === 'ECONNREFUSED') {
+      return 'Tarmoq aloqa xatosi: Serverga ulanib bo\'lmadi';
+    }
+
+    if (error.response) {
+      const status = error.response.status;
+      const data = error.response.data;
+
+      if (status === 500) {
+        return 'Click server ichki xatosi (500)';
+      } else if (status === 502 || status === 503) {
+        return 'Click xizmati vaqtincha ishlamayapti';
+      } else if (status === 404) {
+        return 'Click API endpoint topilmadi';
+      }
+
+      return `Click API xatosi: ${status} - ${data?.error_note || data?.message || 'Noma\'lum xatolik'}`;
+    }
+
+    return `Click API bilan aloqa xatosi: ${error.message}`;
   }
 }
