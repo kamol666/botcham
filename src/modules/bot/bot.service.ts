@@ -22,7 +22,7 @@ interface SessionData {
     type: SubscriptionType;
   };
   hasAgreedToTerms?: boolean;
-  selectedService: string;
+  selectedService?: string;
 }
 
 type BotContext = Context & SessionFlavor<SessionData>;
@@ -1005,18 +1005,14 @@ ${expirationLabel} ${subscriptionEndDate}`;
       return new InlineKeyboard().text('🔙 Asosiy menyu', 'main_menu');
     }
 
-    const redirectURLParams: ClickRedirectParams = {
-      userId: userId,
-      planId: plan._id as string,
-      amount: plan.price as number,
-    };
-
     const paymeCheckoutPageLink = generatePaymeLink({
       planId: plan._id as string,
       amount: plan.price,
       userId: userId,
     });
-    const clickUrl = getClickRedirectLink(redirectURLParams);
+    
+    // Click SHOP-API ishlatamiz (bir martalik to'lov uchun)
+    const clickShopUrl = `${config.BASE_URL}/api/click-shop/create-payment-redirect?userId=${userId}&planId=${plan._id}&selectedService=${selectedService}&amount=${plan.price}`;
     const uzcardOneTimePaymentLink = `${config.BASE_URL}/api/uzcard-onetime-api/card-form?userId=${userId}&planId=${plan._id}&selectedService=${selectedService}`;
 
     return new InlineKeyboard()
@@ -1024,7 +1020,7 @@ ${expirationLabel} ${subscriptionEndDate}`;
       .row()
       .url("📲 Payme orqali to'lash", paymeCheckoutPageLink)
       .row()
-      .url("💳 Click orqali to'lash", clickUrl)
+      .url("💳 Click orqali to'lash", clickShopUrl)
       .row()
       .text('🔙 Asosiy menyu', 'main_menu');
   }
