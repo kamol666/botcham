@@ -251,15 +251,34 @@
                 // Agar telefon allaqachon masked bo'lsa (Click API dan kelgan format)
                 if (phoneNumber.includes('*')) {
                     console.log('⭐ Allaqachon masked format:', phoneNumber);
-                    // Oxirgi 4 ta raqamni topishga harakat qilamiz
-                    const matches = phoneNumber.match(/(\d{4})(?!.*\d)/); // oxirgi 4 ta raqam
+                    // Oxirgi raqamlarni topish (turli formatlarni qo'llab-quvvatlash)
+                    
+                    // 1. Oxirda 4 ta raqam: 99890*****1234
+                    let matches = phoneNumber.match(/(\d{4})$/);
                     if (matches) {
                         const lastFour = matches[1];
-                        console.log('🔢 Topilgan oxirgi 4 ta raqam:', lastFour);
+                        console.log('🔢 Oxirda 4 ta raqam topildi:', lastFour);
                         maskedPhone = `+998 ** *** ${lastFour}`;
                     } else {
-                        // Agar oxirgi 4 ta topilmasa, originalni ishlatamiz yoki default
-                        maskedPhone = phoneNumber.startsWith('+998') ? phoneNumber : `+998 ${phoneNumber}`;
+                        // 2. Oxirda 3 ta raqam: 90*****567
+                        matches = phoneNumber.match(/(\d{3})$/);
+                        if (matches) {
+                            const lastThree = matches[1];
+                            console.log('🔢 Oxirda 3 ta raqam topildi:', lastThree);
+                            maskedPhone = `+998 ** *** ${lastThree}`;
+                        } else {
+                            // 3. Oxirda 2 ta raqam: +998 90 *** ** 67
+                            matches = phoneNumber.match(/(\d{2})$/);
+                            if (matches) {
+                                const lastTwo = matches[1];
+                                console.log('🔢 Oxirda 2 ta raqam topildi:', lastTwo);
+                                maskedPhone = `+998 ** *** ${lastTwo}`;
+                            } else {
+                                // Agar hech narsa topilmasa, originalni ishlatamiz
+                                console.log('⚠️ Oxirgi raqamlar topilmadi, originalni qaytarish');
+                                maskedPhone = phoneNumber.startsWith('+998') ? phoneNumber : `+998 ${phoneNumber}`;
+                            }
+                        }
                     }
                 } else {
                     // Oddiy telefon raqami (to'liq raqam)

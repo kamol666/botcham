@@ -100,13 +100,49 @@
     </div>
 
     <script>
-        // Bizning telefon raqami formatlovchi funksiyamiz (EJS dan ko'chirilgan)
+        // Bizning telefon raqami formatlovchi funksiyamiz (EJS dan ko'chirilgan va Click API uchun yangilangan)
         function formatPhoneNumber(phoneNumber) {
             console.log('📞 Phone parameter:', phoneNumber);
             
             if (phoneNumber) {
-                // Telefon raqamini tozalash (faqat raqamlar)
-                const cleanPhone = phoneNumber.replace(/\D/g, '');
+                const originalPhone = phoneNumber.toString();
+                
+                // Agar telefon raqami allaqachon masked bo'lsa (Click API dan kelgan)
+                if (originalPhone.includes('*')) {
+                    console.log('⭐ Allaqachon masked format:', originalPhone);
+                    // Oxirgi raqamlarni topish (turli formatlarni qo'llab-quvvatlash)
+                    
+                    // 1. Oxirda 4 ta raqam: 99890*****1234
+                    let matches = originalPhone.match(/(\d{4})$/);
+                    if (matches) {
+                        const lastFour = matches[1];
+                        console.log('🔢 Oxirda 4 ta raqam topildi:', lastFour);
+                        return `+998 ** *** ${lastFour}`;
+                    }
+                    
+                    // 2. Oxirda 3 ta raqam: 90*****567
+                    matches = originalPhone.match(/(\d{3})$/);
+                    if (matches) {
+                        const lastThree = matches[1];
+                        console.log('🔢 Oxirda 3 ta raqam topildi:', lastThree);
+                        return `+998 ** *** ${lastThree}`;
+                    }
+                    
+                    // 3. Oxirda 2 ta raqam: +998 90 *** ** 67
+                    matches = originalPhone.match(/(\d{2})$/);
+                    if (matches) {
+                        const lastTwo = matches[1];
+                        console.log('🔢 Oxirda 2 ta raqam topildi:', lastTwo);
+                        return `+998 ** *** ${lastTwo}`;
+                    }
+                    
+                    // Agar hech narsa topilmasa, originalni qaytaramiz
+                    console.log('⚠️ Oxirgi raqamlar topilmadi, originalni qaytarish');
+                    return originalPhone.startsWith('+998') ? originalPhone : `+998 ${originalPhone}`;
+                }
+                
+                // Oddiy raqamlarni tozalash
+                const cleanPhone = originalPhone.replace(/\D/g, '');
                 console.log('🧹 Tozalangan telefon:', cleanPhone);
 
                 let maskedPhone;
@@ -137,10 +173,13 @@
 
         // 1. URL parametr testi
         function testUrlParameters() {
-            // URL parametrlarni simulatsiya qilish
+            // URL parametrlarni simulatsiya qilish (Click API formatlarini qo'shish)
             const testUrls = [
                 'verify-sms?token=abc123&phone=998901234567&userId=123&planId=1&selectedService=yulduz',
                 'verify-sms?token=def456&phone=8600123456789012&userId=456&planId=2&selectedService=yulduz',
+                'verify-sms?token=click1&phone=99890*****1234&userId=111&planId=1&selectedService=yulduz', // Click masked 4 raqam
+                'verify-sms?token=click2&phone=90*****567&userId=222&planId=2&selectedService=yulduz', // Click masked 3 raqam
+                'verify-sms?token=click3&phone=998*****89&userId=333&planId=3&selectedService=yulduz', // Click masked 2 raqam
                 'verify-sms?token=ghi789&userId=789&planId=3&selectedService=yulduz' // phone yo'q
             ];
 

@@ -14,15 +14,43 @@ function maskPhoneNumber(phone) {
         // Agar telefon raqami allaqachon masked bo'lsa (Click API dan kelgan)
         if (originalPhone.includes('*')) {
             console.log(`  ⭐ Allaqachon masked format: "${originalPhone}"`);
-            // Oxirgi 4 ta raqamni topishga harakat qilamiz
-            const matches = originalPhone.match(/(\d{4})(?!.*\d)/); // oxirgi 4 ta raqam
+            // Oxirgi raqamlarni topish (turli formatlarni qo'llab-quvvatlash)
+            
+            // 1. Oxirda 4 ta raqam: 99890*****1234
+            let matches = originalPhone.match(/(\d{4})$/);
             if (matches) {
                 const lastFour = matches[1];
-                console.log(`  🔢 Topilgan oxirgi 4 ta: "${lastFour}"`);
+                console.log(`  🔢 Oxirda 4 ta raqam topildi: "${lastFour}"`);
                 const maskedPhone = `+998 ** *** ${lastFour}`;
                 console.log(`  ✅ Natija: "${maskedPhone}"\n`);
                 return maskedPhone;
             }
+            
+            // 2. Oxirda 3 ta raqam: 90*****567
+            matches = originalPhone.match(/(\d{3})$/);
+            if (matches) {
+                const lastThree = matches[1];
+                console.log(`  🔢 Oxirda 3 ta raqam topildi: "${lastThree}"`);
+                const maskedPhone = `+998 ** *** ${lastThree}`;
+                console.log(`  ✅ Natija: "${maskedPhone}"\n`);
+                return maskedPhone;
+            }
+            
+            // 3. Oxirda 2 ta raqam: +998 90 *** ** 67
+            matches = originalPhone.match(/(\d{2})$/);
+            if (matches) {
+                const lastTwo = matches[1];
+                console.log(`  🔢 Oxirda 2 ta raqam topildi: "${lastTwo}"`);
+                const maskedPhone = `+998 ** *** ${lastTwo}`;
+                console.log(`  ✅ Natija: "${maskedPhone}"\n`);
+                return maskedPhone;
+            }
+            
+            // Agar hech narsa topilmasa, originalni qaytaramiz
+            console.log(`  ⚠️ Oxirgi raqamlar topilmadi, originalni qaytarish`);
+            const maskedPhone = originalPhone.startsWith('+998') ? originalPhone : `+998 ${originalPhone}`;
+            console.log(`  ✅ Natija: "${maskedPhone}"\n`);
+            return maskedPhone;
         }
         
         // Oddiy raqamlarni tozalash
@@ -65,10 +93,13 @@ const testCases = [
     '8600123456789012', // Uzcard format
     
     // Click API dan kelishi mumkin bo'lgan formatlar
-    '99890*****567', // Click masked format
+    '99890*****1234', // Click masked format - 4 ta oxirgi raqam
+    '99890*****567', // Click masked format - 3 ta oxirgi raqam  
+    '90*****567', // Click qisqa masked format - 3 ta oxirgi
+    '90*****12', // Click qisqa masked format - 2 ta oxirgi
+    '+998 90 *** ** 67', // Click spaced format - 2 ta oxirgi
+    '998*****1234', // Click boshqa format - 4 ta oxirgi
     '998901234567', // Click full format
-    '90*****567', // Click qisqa masked format
-    '+998 90 *** ** 67', // Click spaced format
     
     // Edge cases
     '1234', // qisqa raqam
