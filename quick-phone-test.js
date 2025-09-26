@@ -6,16 +6,16 @@ console.log('📞 TELEFON RAQAMI MASKLANISH TESTI\n');
 // EJS template dan olingan logika (Click API uchun yangilangan)
 function maskPhoneNumber(phone) {
     console.log(`🔍 Input: "${phone}"`);
-    
+
     if (phone) {
         // Telefon raqamini tozalash (faqat raqamlar va *)
         const originalPhone = phone.toString();
-        
+
         // Agar telefon raqami allaqachon masked bo'lsa (Click API dan kelgan)
         if (originalPhone.includes('*')) {
             console.log(`  ⭐ Allaqachon masked format: "${originalPhone}"`);
             // Oxirgi raqamlarni topish (turli formatlarni qo'llab-quvvatlash)
-            
+
             // 1. Oxirda 4 ta raqam: 99890*****1234
             let matches = originalPhone.match(/(\d{4})$/);
             if (matches) {
@@ -25,7 +25,7 @@ function maskPhoneNumber(phone) {
                 console.log(`  ✅ Natija: "${maskedPhone}"\n`);
                 return maskedPhone;
             }
-            
+
             // 2. Oxirda 3 ta raqam: 90*****567
             matches = originalPhone.match(/(\d{3})$/);
             if (matches) {
@@ -35,7 +35,7 @@ function maskPhoneNumber(phone) {
                 console.log(`  ✅ Natija: "${maskedPhone}"\n`);
                 return maskedPhone;
             }
-            
+
             // 3. Oxirda 2 ta raqam: +998 90 *** ** 67
             matches = originalPhone.match(/(\d{2})$/);
             if (matches) {
@@ -45,14 +45,14 @@ function maskPhoneNumber(phone) {
                 console.log(`  ✅ Natija: "${maskedPhone}"\n`);
                 return maskedPhone;
             }
-            
+
             // Agar hech narsa topilmasa, originalni qaytaramiz
             console.log(`  ⚠️ Oxirgi raqamlar topilmadi, originalni qaytarish`);
             const maskedPhone = originalPhone.startsWith('+998') ? originalPhone : `+998 ${originalPhone}`;
             console.log(`  ✅ Natija: "${maskedPhone}"\n`);
             return maskedPhone;
         }
-        
+
         // Oddiy raqamlarni tozalash
         const cleanPhone = originalPhone.replace(/\D/g, '');
         console.log(`  🧹 Tozalangan: "${cleanPhone}"`);
@@ -88,10 +88,10 @@ function maskPhoneNumber(phone) {
 const testCases = [
     // To'g'ri formatlar
     '998901234567',
-    '+998901234567', 
+    '+998901234567',
     '998 90 123 45 67',
     '8600123456789012', // Uzcard format
-    
+
     // Click API dan kelishi mumkin bo'lgan formatlar
     '99890*****1234', // Click masked format - 4 ta oxirgi raqam
     '99890*****567', // Click masked format - 3 ta oxirgi raqam  
@@ -100,13 +100,13 @@ const testCases = [
     '+998 90 *** ** 67', // Click spaced format - 2 ta oxirgi
     '998*****1234', // Click boshqa format - 4 ta oxirgi
     '998901234567', // Click full format
-    
+
     // Edge cases
     '1234', // qisqa raqam
     '', // bo'sh
     null, // null
     undefined, // undefined
-    
+
     // Noto'g'ri formatlar
     '12345678901234567890', // juda uzun
     'abc123def', // harflar bilan

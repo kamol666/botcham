@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,12 +14,14 @@
             max-width: 600px;
             margin: 0 auto;
         }
+
         .test-container {
             background-color: #302d2d;
             padding: 20px;
             border-radius: 10px;
             margin: 20px 0;
         }
+
         .phone-display {
             font-size: 18px;
             margin: 10px 0;
@@ -26,9 +29,11 @@
             background-color: #222;
             border-radius: 5px;
         }
+
         .input-group {
             margin: 15px 0;
         }
+
         input {
             width: 100%;
             padding: 10px;
@@ -38,6 +43,7 @@
             border: 1px solid #444;
             border-radius: 5px;
         }
+
         button {
             background-color: #0f8fee;
             color: white;
@@ -47,20 +53,24 @@
             cursor: pointer;
             font-size: 16px;
         }
+
         .example {
             background-color: #444;
             padding: 15px;
             border-radius: 5px;
             margin: 10px 0;
         }
+
         .success {
             color: #28a745;
         }
+
         .error {
             color: #ff6b6b;
         }
     </style>
 </head>
+
 <body>
     <h1>🧪 Telefon Raqami Ko'rsatish Testi</h1>
 
@@ -103,15 +113,15 @@
         // Bizning telefon raqami formatlovchi funksiyamiz (EJS dan ko'chirilgan va Click API uchun yangilangan)
         function formatPhoneNumber(phoneNumber) {
             console.log('📞 Phone parameter:', phoneNumber);
-            
+
             if (phoneNumber) {
                 const originalPhone = phoneNumber.toString();
-                
+
                 // Agar telefon raqami allaqachon masked bo'lsa (Click API dan kelgan)
                 if (originalPhone.includes('*')) {
                     console.log('⭐ Allaqachon masked format:', originalPhone);
                     // Oxirgi raqamlarni topish (turli formatlarni qo'llab-quvvatlash)
-                    
+
                     // 1. Oxirda 4 ta raqam: 99890*****1234
                     let matches = originalPhone.match(/(\d{4})$/);
                     if (matches) {
@@ -119,7 +129,7 @@
                         console.log('🔢 Oxirda 4 ta raqam topildi:', lastFour);
                         return `+998 ** *** ${lastFour}`;
                     }
-                    
+
                     // 2. Oxirda 3 ta raqam: 90*****567
                     matches = originalPhone.match(/(\d{3})$/);
                     if (matches) {
@@ -127,7 +137,7 @@
                         console.log('🔢 Oxirda 3 ta raqam topildi:', lastThree);
                         return `+998 ** *** ${lastThree}`;
                     }
-                    
+
                     // 3. Oxirda 2 ta raqam: +998 90 *** ** 67
                     matches = originalPhone.match(/(\d{2})$/);
                     if (matches) {
@@ -135,12 +145,12 @@
                         console.log('🔢 Oxirda 2 ta raqam topildi:', lastTwo);
                         return `+998 ** *** ${lastTwo}`;
                     }
-                    
+
                     // Agar hech narsa topilmasa, originalni qaytaramiz
                     console.log('⚠️ Oxirgi raqamlar topilmadi, originalni qaytarish');
                     return originalPhone.startsWith('+998') ? originalPhone : `+998 ${originalPhone}`;
                 }
-                
+
                 // Oddiy raqamlarni tozalash
                 const cleanPhone = originalPhone.replace(/\D/g, '');
                 console.log('🧹 Tozalangan telefon:', cleanPhone);
@@ -198,7 +208,7 @@
         function testPhoneFormat() {
             const phoneInput = document.getElementById('phoneInput').value;
             const result = formatPhoneNumber(phoneInput);
-            document.getElementById('manualTestResult').innerHTML = 
+            document.getElementById('manualTestResult').innerHTML =
                 `Input: <span class="error">${phoneInput}</span> → Output: <span class="success">${result}</span>`;
         }
 
@@ -235,7 +245,7 @@
             scenarios.forEach(scenario => {
                 html += `<div style="margin: 15px 0; padding: 15px; background-color: #555; border-radius: 10px; border-left: 4px solid #0f8fee;">`;
                 html += `<h4 style="margin: 0 0 10px 0; color: #0f8fee;">${scenario.title}</h4>`;
-                
+
                 scenario.steps.forEach(s => {
                     html += `<div style="margin: 8px 0; padding: 8px; background-color: #444; border-radius: 5px;">`;
                     html += `<strong>${s.step}:</strong> `;
@@ -244,7 +254,7 @@
                     if (s.display) html += `<span class="success">Foydalanuvchi ko'radi: ${s.display}</span>`;
                     html += '</div>';
                 });
-                
+
                 html += '</div>';
             });
 
@@ -252,13 +262,14 @@
         }
 
         // Sahifa yuklanganda testlarni ishga tushir
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             testUrlParameters();
-            
+
             // Console loglarni ham ko'rsat
             console.log('🧪 Test sahifasi yuklandi');
             console.log('🔍 Barcha testlar consoleda ham ko\'rinadi');
         });
     </script>
 </body>
+
 </html>

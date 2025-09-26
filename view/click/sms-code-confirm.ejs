@@ -245,14 +245,14 @@
             // Display masked phone number with real last 4 digits (Click API uchun yangilangan)
             if (phoneNumber) {
                 console.log('📞 Phone parameter mavjud:', phoneNumber);
-                
+
                 let maskedPhone;
-                
+
                 // Agar telefon allaqachon masked bo'lsa (Click API dan kelgan format)
                 if (phoneNumber.includes('*')) {
                     console.log('⭐ Allaqachon masked format:', phoneNumber);
                     // Oxirgi raqamlarni topish (turli formatlarni qo'llab-quvvatlash)
-                    
+
                     // 1. Oxirda 4 ta raqam: 99890*****1234
                     let matches = phoneNumber.match(/(\d{4})$/);
                     if (matches) {
@@ -283,7 +283,7 @@
                 } else {
                     // Oddiy telefon raqami (to'liq raqam)
                     const cleanPhone = phoneNumber.replace(/\D/g, '');
-                    
+
                     if (cleanPhone.length >= 4) {
                         // Oxirgi 4 ta raqamni olish
                         const lastFour = cleanPhone.slice(-4);
