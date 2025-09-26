@@ -143,7 +143,7 @@ export class ClickSubsApiService {
 
             const time = new Date().getTime();
             logger.info(`Creating user card for user ID: ${requestBody.userId}, with card token: ${requestBody.card_token}`);
-            
+
             // Check if user card already exists with this incomplete card number
             const existingCard = await UserCardsModel.findOne({
                 incompleteCardNumber: response.data.card_number

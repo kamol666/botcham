@@ -13,7 +13,7 @@ import { PaymentProvider, PaymentTypes, Transaction, TransactionStatus } from 's
 
 @Injectable()
 export class PaymeSubsApiService {
-  
+
     private botService: BotService;
     private readonly baseUrl = 'https://checkout.paycom.uz/api';
 
@@ -28,8 +28,8 @@ export class PaymeSubsApiService {
         return this.botService;
     }
 
- async createCardToken(requestBody: CreateCardTokenPaymeDto) {
-          // Create headers
+    async createCardToken(requestBody: CreateCardTokenPaymeDto) {
+        // Create headers
         const headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -57,7 +57,7 @@ export class PaymeSubsApiService {
             const response = await axios.post(
                 this.baseUrl,
                 cardCreateRequest,
-                {headers}
+                { headers }
             );
 
 
@@ -86,7 +86,7 @@ export class PaymeSubsApiService {
                 const result = await axios.post(
                     this.baseUrl,
                     cardGetVerifyCodeRequest,
-                    {headers}
+                    { headers }
                 );
 
                 logger.warn('Response from get_verify_code: ' + JSON.stringify(result.data.result));
@@ -132,10 +132,10 @@ export class PaymeSubsApiService {
             };
         }
 
-}
+    }
 
 
-async verifyCardToken(requestBody: VerifyCardTokenPaymeDtoDto) {
+    async verifyCardToken(requestBody: VerifyCardTokenPaymeDtoDto) {
         const headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -156,7 +156,7 @@ async verifyCardToken(requestBody: VerifyCardTokenPaymeDtoDto) {
             const response = await axios.post(
                 this.baseUrl,
                 cardVerifyRequest,
-                {headers}
+                { headers }
             );
             logger.warn('Response from verify: ' + JSON.stringify(response.data));
 
@@ -192,7 +192,7 @@ async verifyCardToken(requestBody: VerifyCardTokenPaymeDtoDto) {
             try {
                 const time = new Date().getTime();
                 logger.info(`Processing user card for user ID: ${requestBody.userId}, with card token: ${requestBody.token}`);
-                
+
                 let userCard;
                 if (existingUserCard) {
                     // Update existing card
@@ -323,11 +323,11 @@ async verifyCardToken(requestBody: VerifyCardTokenPaymeDtoDto) {
                     message: 'Error connecting to payment service'
                 }
             };
-        }  
+        }
 
-  }
+    }
 
-async resendCode(requestBody: any) {
+    async resendCode(requestBody: any) {
         const headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -347,7 +347,7 @@ async resendCode(requestBody: any) {
             const response = await axios.post(
                 this.baseUrl,
                 cardResendRequest,
-                {headers}
+                { headers }
             );
             return {
                 success: true,
@@ -364,10 +364,10 @@ async resendCode(requestBody: any) {
             };
         }
 
-}
+    }
 
-    
-async payReceipt(receiptId: string, userId: string, planId: string) {
+
+    async payReceipt(receiptId: string, userId: string, planId: string) {
         const headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -387,7 +387,7 @@ async payReceipt(receiptId: string, userId: string, planId: string) {
             return;
         }
 
-        const userCard = await UserCardsModel.findOne({userId: userId});
+        const userCard = await UserCardsModel.findOne({ userId: userId });
         if (!userCard) {
             logger.error('User card not found');
             return;
@@ -410,7 +410,7 @@ async payReceipt(receiptId: string, userId: string, planId: string) {
             const response = await axios.post(
                 this.baseUrl,
                 receiptPayRequest,
-                {headers}
+                { headers }
             );
 
 
@@ -527,7 +527,7 @@ async payReceipt(receiptId: string, userId: string, planId: string) {
             const response = await axios.post(
                 this.baseUrl,
                 receiptCreateRequest,
-                {headers}
+                { headers }
             );
 
             receiptId = response.data.result.receipt._id;
@@ -551,7 +551,7 @@ async payReceipt(receiptId: string, userId: string, planId: string) {
     }
 
 
-  private getErrorMessage(errorCode: number): string {
+    private getErrorMessage(errorCode: number): string {
         const errorMessages = {
             '-31300': `Karta raqami noto'g'ri. Iltimos tekshirib qaytadan kiriting.`,
             '-31301': `Amal qilish muddati noto'g'ri. Iltimos tekshirib qaytadan kiriting.`,
