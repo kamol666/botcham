@@ -6,11 +6,11 @@ import { ClickShopService } from './click-shop.service';
 export class ClickShopController {
     constructor(private readonly clickShopService: ClickShopService) { }
 
-    // Bir martalik to'lov yaratish
-    @Post('create-payment')
-    async createPayment(@Body() createPaymentDto: any) {
+    // Payment session yaratish (API endpoint)
+    @Post('create-payment-session')
+    async createPaymentSession(@Body() createPaymentDto: any) {
         try {
-            const result = await this.clickShopService.createPayment(createPaymentDto);
+            const result = await this.clickShopService.createPaymentSession(createPaymentDto);
             return {
                 success: true,
                 data: result
@@ -52,19 +52,37 @@ export class ClickShopController {
         return this.clickShopService.checkPaymentStatus(transactionId);
     }
 
-    // To'lovni yaratish va yo'naltirish (bot uchun)
+    // Xavfsiz payment session yaratish (bot uchun)
     @Get('create-payment-redirect')
     async createPaymentAndRedirect(@Query() query: any, @Res() res: Response) {
         try {
-            const { userId, planId, selectedService, amount } = query;
+            const { userId, planId, selectedService } = query;
 
-            // To'lov yaratish
-            const result = await this.clickShopService.createPayment({
+            // Xavfsiz payment session yaratish
+            const result = await this.clickShopService.createPaymentSession({
                 userId,
                 planId,
-                selectedService,
-                amount: parseInt(amount)
+                selectedService
             });
+
+            if (result.redirect_url) {
+                // Xavfsiz URL ga yo'naltirish
+                return res.redirect(result.redirect_url);
+            } else {
+                throw new Error('To\'lov URL yaratilmadi');
+            }
+        } catch (error) {
+            // Xatolik bo'lsa, bot'ga qaytarish
+            return res.redirect(`https://t.me/munajjimlarbashorati_bot?start=payment_error`);
+        }
+    }
+
+    // Session orqali to'lov yaratish
+    @Get('initiate-payment/:sessionToken')
+    async initiatePayment(@Param('sessionToken') sessionToken: string, @Res() res: Response) {
+        try {
+            // Session tekshirib to'lov yaratish
+            const result = await this.clickShopService.createPaymentFromSession(sessionToken);
 
             if (result.payment_url) {
                 // Click to'lov sahifasiga yo'naltirish

@@ -5,6 +5,7 @@ import { Transaction, TransactionStatus } from '../../../shared/database/models/
 import { BotService } from '../../bot/bot.service';
 import { UserModel } from '../../../shared/database/models/user.model';
 import { Plan } from '../../../shared/database/models/plans.model';
+import { PaymentSession } from '../../../shared/database/models/payment-session.model';
 
 @Injectable()
 export class ClickShopService {
@@ -22,13 +23,69 @@ export class ClickShopService {
         this.merchantId = this.configService.get<string>('CLICK_MERCHANT_ID');
     }
 
-    // Bir martalik to'lov yaratish
-    async createPayment(createPaymentDto: any) {
+    // Xavfsiz payment session yaratish
+    async createPaymentSession(createPaymentDto: any) {
         try {
-            this.logger.log('Click SHOP to\'lov yaratish:', createPaymentDto);
+            this.logger.log('Payment session yaratish:', {
+                userId: createPaymentDto.userId,
+                planId: createPaymentDto.planId,
+                provider: 'click-shop'
+            });
 
             // Plan ma'lumotlarini olish
             const plan = await Plan.findById(createPaymentDto.planId);
+            if (!plan) {
+                throw new Error('Plan topilmadi');
+            }
+
+            // Xavfsiz session token yaratish
+            const sessionToken = this.generateSecureToken();
+
+            // Payment session yaratish (15 daqiqa amal qiladi)
+            const paymentSession = new PaymentSession({
+                sessionToken,
+                userId: createPaymentDto.userId,
+                planId: createPaymentDto.planId,
+                selectedService: createPaymentDto.selectedService,
+                amount: plan.price,
+                provider: 'click-shop',
+                status: 'pending',
+                expiresAt: new Date(Date.now() + 15 * 60 * 1000) // 15 daqiqa
+            });
+
+            await paymentSession.save();
+
+            // Faqat session token bilan URL yaratish
+            const redirectUrl = `${this.configService.get('BASE_URL')}/api/click-shop/initiate-payment/${sessionToken}`;
+
+            return {
+                redirect_url: redirectUrl,
+                session_token: sessionToken,
+                expires_at: paymentSession.expiresAt
+            };
+
+        } catch (error) {
+            this.logger.error('Payment session yaratishda xatolik:', error);
+            throw error;
+        }
+    }
+
+    // Session orqali to'lov yaratish
+    async createPaymentFromSession(sessionToken: string) {
+        try {
+            // Session tekshirish
+            const session = await PaymentSession.findOne({
+                sessionToken,
+                status: 'pending',
+                expiresAt: { $gt: new Date() }
+            });
+
+            if (!session) {
+                throw new Error('Session topilmadi yoki muddati tugagan');
+            }
+
+            // Plan ma'lumotlarini olish
+            const plan = await Plan.findById(session.planId);
             if (!plan) {
                 throw new Error('Plan topilmadi');
             }
@@ -37,10 +94,10 @@ export class ClickShopService {
             const merchantTransId = this.generateMerchantTransId();
 
             const transaction = new Transaction({
-                userId: createPaymentDto.userId,
-                planId: createPaymentDto.planId,
-                selectedService: createPaymentDto.selectedService,
-                amount: plan.price,
+                userId: session.userId,
+                planId: session.planId,
+                selectedService: session.selectedService,
+                amount: session.amount,
                 currency: 'UZS',
                 provider: 'click-shop',
                 status: TransactionStatus.PENDING,
@@ -48,32 +105,37 @@ export class ClickShopService {
                 metadata: {
                     merchant_trans_id: merchantTransId,
                     plan_name: plan.name,
-                    plan_duration: plan.duration
+                    plan_duration: plan.duration,
+                    session_token: sessionToken
                 }
             });
 
             await transaction.save();
             this.logger.log('Transaction yaratildi:', transaction._id);
 
+            // Session ishlatilgan deb belgilash
+            session.status = 'used';
+            await session.save();
+
             // Click SHOP-API URL yaratish
             const paymentUrl = this.generateClickUrl({
                 merchant_id: this.merchantId,
                 service_id: this.serviceId,
                 transaction_param: merchantTransId,
-                amount: plan.price,
+                amount: session.amount,
                 return_url: `${this.configService.get('BASE_URL')}/api/click-shop/success`,
-                merchant_user_id: createPaymentDto.userId,
+                merchant_user_id: session.userId,
             });
 
             return {
                 payment_url: paymentUrl,
                 transaction_id: transaction._id,
                 merchant_trans_id: merchantTransId,
-                amount: plan.price
+                amount: session.amount
             };
 
         } catch (error) {
-            this.logger.error('Click SHOP to\'lov yaratishda xatolik:', error);
+            this.logger.error('Session dan to\'lov yaratishda xatolik:', error);
             throw error;
         }
     }
@@ -295,6 +357,11 @@ export class ClickShopService {
     // Transaction ID generatsiya qilish
     private generateMerchantTransId(): string {
         return `shop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+
+    // Xavfsiz token generatsiya qilish
+    private generateSecureToken(): string {
+        return crypto.randomBytes(32).toString('hex');
     }
 
     // Transaction topish

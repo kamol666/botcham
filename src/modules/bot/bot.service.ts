@@ -1011,8 +1011,8 @@ ${expirationLabel} ${subscriptionEndDate}`;
       userId: userId,
     });
 
-    // Click SHOP-API ishlatamiz (bir martalik to'lov uchun)
-    const clickShopUrl = `${config.BASE_URL}/api/click-shop/create-payment-redirect?userId=${userId}&planId=${plan._id}&selectedService=${selectedService}&amount=${plan.price}`;
+    // Click SHOP-API ishlatamiz (xavfsiz session bilan)
+    const clickShopUrl = `${config.BASE_URL}/api/click-shop/create-payment-redirect?userId=${userId}&planId=${plan._id}&selectedService=${selectedService}`;
     const uzcardOneTimePaymentLink = `${config.BASE_URL}/api/uzcard-onetime-api/card-form?userId=${userId}&planId=${plan._id}&selectedService=${selectedService}`;
 
     return new InlineKeyboard()
