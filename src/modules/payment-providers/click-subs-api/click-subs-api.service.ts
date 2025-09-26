@@ -103,9 +103,13 @@ export class ClickSubsApiService {
             result.token = response.data.card_token;
             result.incompletePhoneNumber = response.data.phone_number;
 
-            // Redirect URL yaratish (telefon raqami bilan)
+            // Click API dan kelgan haqiqiy telefon raqamini ishlatamiz
+            const realUserPhone = response.data.phone_number || userPhone; // fallback sifatida fake phone
+            console.log("Haqiqiy foydalanuvchi telefoni:", realUserPhone);
+
+            // Redirect URL yaratish (haqiqiy telefon raqami bilan)
             const baseUrl = this.configService.get('BASE_URL') || 'http://localhost:3000';
-            result.redirect_url = `${baseUrl}/api/click-subs-api/verify-sms?token=${response.data.card_token}&userId=${requestBody.userId}&planId=${requestBody.planId}&selectedService=${requestBody.selectedService}&phone=${encodeURIComponent(userPhone)}`;
+            result.redirect_url = `${baseUrl}/api/click-subs-api/verify-sms?token=${response.data.card_token}&userId=${requestBody.userId}&planId=${requestBody.planId}&selectedService=${requestBody.selectedService}&phone=${encodeURIComponent(realUserPhone)}`;
 
             return result;
         } catch (error) {

@@ -233,34 +233,64 @@
             const selectedService = urlParams.get('selectedService');
 
 
-            // Display masked phone number with real last 4 digits
+            // Debug: URL parametrlarni console ga chiqarish
+            console.log('🔍 URL Parameters:', {
+                phoneNumber: phoneNumber,
+                cardToken: cardToken,
+                userId: userId,
+                planId: planId,
+                selectedService: selectedService
+            });
+
+            // Display masked phone number with real last 4 digits (Click API uchun yangilangan)
             if (phoneNumber) {
-                // Telefon raqamini tozalash (faqat raqamlar)
-                const cleanPhone = phoneNumber.replace(/\D/g, '');
-
+                console.log('📞 Phone parameter mavjud:', phoneNumber);
+                
                 let maskedPhone;
-                if (cleanPhone.length >= 4) {
-                    // Oxirgi 4 ta raqamni olish
-                    const lastFour = cleanPhone.slice(-4);
-
-                    // Uzbekiston formati uchun
-                    if (cleanPhone.startsWith('998') && cleanPhone.length >= 12) {
-                        // +998901234567 -> +998 ** *** 4567
-                        maskedPhone = `+998 ** *** ${lastFour}`;
-                    } else if (cleanPhone.length >= 9) {
-                        // 901234567 -> +998 ** *** 4567
+                
+                // Agar telefon allaqachon masked bo'lsa (Click API dan kelgan format)
+                if (phoneNumber.includes('*')) {
+                    console.log('⭐ Allaqachon masked format:', phoneNumber);
+                    // Oxirgi 4 ta raqamni topishga harakat qilamiz
+                    const matches = phoneNumber.match(/(\d{4})(?!.*\d)/); // oxirgi 4 ta raqam
+                    if (matches) {
+                        const lastFour = matches[1];
+                        console.log('🔢 Topilgan oxirgi 4 ta raqam:', lastFour);
                         maskedPhone = `+998 ** *** ${lastFour}`;
                     } else {
-                        // Boshqa formatlar
-                        maskedPhone = `*** ** *** ${lastFour}`;
+                        // Agar oxirgi 4 ta topilmasa, originalni ishlatamiz yoki default
+                        maskedPhone = phoneNumber.startsWith('+998') ? phoneNumber : `+998 ${phoneNumber}`;
                     }
                 } else {
-                    // Agar telefon raqami to'liq bo'lmasa, default
-                    maskedPhone = '+998 ** *** 4567';
+                    // Oddiy telefon raqami (to'liq raqam)
+                    const cleanPhone = phoneNumber.replace(/\D/g, '');
+                    
+                    if (cleanPhone.length >= 4) {
+                        // Oxirgi 4 ta raqamni olish
+                        const lastFour = cleanPhone.slice(-4);
+                        console.log('🔢 Oxirgi 4 ta raqam:', lastFour);
+
+                        // Uzbekiston formati uchun
+                        if (cleanPhone.startsWith('998') && cleanPhone.length >= 12) {
+                            // +998901234567 -> +998 ** *** 4567
+                            maskedPhone = `+998 ** *** ${lastFour}`;
+                        } else if (cleanPhone.length >= 9) {
+                            // 901234567 -> +998 ** *** 4567
+                            maskedPhone = `+998 ** *** ${lastFour}`;
+                        } else {
+                            // Boshqa formatlar
+                            maskedPhone = `*** ** *** ${lastFour}`;
+                        }
+                    } else {
+                        // Agar telefon raqami to'liq bo'lmasa, default
+                        maskedPhone = '+998 ** *** 4567';
+                    }
                 }
 
+                console.log('📱 Yakuniy masked phone:', maskedPhone);
                 document.getElementById('phoneNumber').textContent = maskedPhone;
             } else {
+                console.log('⚠️ Phone parameter yo\'q, default ishlatiladi');
                 // Default qiymat (agar phone parameter yo'q bo'lsa)
                 document.getElementById('phoneNumber').textContent = '+998 ** *** 4567';
             }

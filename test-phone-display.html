@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Telefon Raqami Ko'rsatish</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #141414;
+            color: white;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .test-container {
+            background-color: #302d2d;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .phone-display {
+            font-size: 18px;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #222;
+            border-radius: 5px;
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #222;
+            color: white;
+            border: 1px solid #444;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #0f8fee;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .example {
+            background-color: #444;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #28a745;
+        }
+        .error {
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Telefon Raqami Ko'rsatish Testi</h1>
+
+    <div class="test-container">
+        <h2>1️⃣ URL Parametr Test</h2>
+        <p>URL parametr simulatsiyasi:</p>
+        <div class="phone-display" id="urlTestResult">Test natijasi...</div>
+    </div>
+
+    <div class="test-container">
+        <h2>2️⃣ Turli Telefon Formatlarini Test Qilish</h2>
+        <div class="input-group">
+            <label>Telefon raqamini kiriting:</label>
+            <input type="text" id="phoneInput" placeholder="998901234567" value="998901234567">
+            <button onclick="testPhoneFormat()">Test Qil</button>
+        </div>
+        <div class="phone-display" id="manualTestResult">Natija bu yerda ko'rinadi...</div>
+    </div>
+
+    <div class="test-container">
+        <h2>3️⃣ Misollar</h2>
+        <div class="example">
+            <strong>Karta raqami:</strong> 8600123456789012 → <span class="success">+998 ** *** 9012</span>
+        </div>
+        <div class="example">
+            <strong>Telefon:</strong> 998901234567 → <span class="success">+998 ** *** 4567</span>
+        </div>
+        <div class="example">
+            <strong>Qisqa raqam:</strong> 1234 → <span class="success">+998 ** *** 1234</span>
+        </div>
+    </div>
+
+    <div class="test-container">
+        <h2>4️⃣ URL Simulatsiya Test</h2>
+        <button onclick="simulateClickFlow()">Click To'lov Oqimini Simulatsiya Qil</button>
+        <div id="simulationResult" class="phone-display"></div>
+    </div>
+
+    <script>
+        // Bizning telefon raqami formatlovchi funksiyamiz (EJS dan ko'chirilgan)
+        function formatPhoneNumber(phoneNumber) {
+            console.log('📞 Phone parameter:', phoneNumber);
+            
+            if (phoneNumber) {
+                // Telefon raqamini tozalash (faqat raqamlar)
+                const cleanPhone = phoneNumber.replace(/\D/g, '');
+                console.log('🧹 Tozalangan telefon:', cleanPhone);
+
+                let maskedPhone;
+                if (cleanPhone.length >= 4) {
+                    // Oxirgi 4 ta raqamni olish
+                    const lastFour = cleanPhone.slice(-4);
+                    console.log('🔢 Oxirgi 4 ta raqam:', lastFour);
+
+                    // Uzbekiston formati uchun
+                    if (cleanPhone.startsWith('998') && cleanPhone.length >= 12) {
+                        maskedPhone = `+998 ** *** ${lastFour}`;
+                    } else if (cleanPhone.length >= 9) {
+                        maskedPhone = `+998 ** *** ${lastFour}`;
+                    } else {
+                        maskedPhone = `*** ** *** ${lastFour}`;
+                    }
+                } else {
+                    maskedPhone = '+998 ** *** 4567';
+                }
+
+                console.log('📱 Yakuniy masked phone:', maskedPhone);
+                return maskedPhone;
+            } else {
+                console.log('⚠️ Phone parameter yo\'q');
+                return '+998 ** *** 4567';
+            }
+        }
+
+        // 1. URL parametr testi
+        function testUrlParameters() {
+            // URL parametrlarni simulatsiya qilish
+            const testUrls = [
+                'verify-sms?token=abc123&phone=998901234567&userId=123&planId=1&selectedService=yulduz',
+                'verify-sms?token=def456&phone=8600123456789012&userId=456&planId=2&selectedService=yulduz',
+                'verify-sms?token=ghi789&userId=789&planId=3&selectedService=yulduz' // phone yo'q
+            ];
+
+            let results = '';
+            testUrls.forEach((url, index) => {
+                const params = new URLSearchParams(url.split('?')[1]);
+                const phone = params.get('phone');
+                const result = formatPhoneNumber(phone);
+                results += `Test ${index + 1}: ${result}<br>`;
+            });
+
+            document.getElementById('urlTestResult').innerHTML = results;
+        }
+
+        // 2. Qo'lda test qilish
+        function testPhoneFormat() {
+            const phoneInput = document.getElementById('phoneInput').value;
+            const result = formatPhoneNumber(phoneInput);
+            document.getElementById('manualTestResult').innerHTML = 
+                `Input: <span class="error">${phoneInput}</span> → Output: <span class="success">${result}</span>`;
+        }
+
+        // 3. Click to'lov oqimini simulatsiya qilish
+        function simulateClickFlow() {
+            const scenarios = [
+                {
+                    title: 'Scenario 1: Haqiqiy Click API (to\'liq telefon)',
+                    steps: [
+                        { step: '1. Karta kiritish', card: '8600123456789012' },
+                        { step: '2. Click API javobi', clickResponse: '998901234567' },
+                        { step: '3. SMS sahifa', display: formatPhoneNumber('998901234567') }
+                    ]
+                },
+                {
+                    title: 'Scenario 2: Click API masked format',
+                    steps: [
+                        { step: '1. Karta kiritish', card: '9860123456789012' },
+                        { step: '2. Click API javobi', clickResponse: '99890*****567' },
+                        { step: '3. SMS sahifa', display: formatPhoneNumber('99890*****567') }
+                    ]
+                },
+                {
+                    title: 'Scenario 3: Click API qisqa masked',
+                    steps: [
+                        { step: '1. Karta kiritish', card: '5614123456789012' },
+                        { step: '2. Click API javobi', clickResponse: '90*****123' },
+                        { step: '3. SMS sahifa', display: formatPhoneNumber('90*****123') }
+                    ]
+                }
+            ];
+
+            let html = '';
+            scenarios.forEach(scenario => {
+                html += `<div style="margin: 15px 0; padding: 15px; background-color: #555; border-radius: 10px; border-left: 4px solid #0f8fee;">`;
+                html += `<h4 style="margin: 0 0 10px 0; color: #0f8fee;">${scenario.title}</h4>`;
+                
+                scenario.steps.forEach(s => {
+                    html += `<div style="margin: 8px 0; padding: 8px; background-color: #444; border-radius: 5px;">`;
+                    html += `<strong>${s.step}:</strong> `;
+                    if (s.card) html += `<code>${s.card}</code><br>`;
+                    if (s.clickResponse) html += `<span style="color: #ffa500;">Click API: ${s.clickResponse}</span><br>`;
+                    if (s.display) html += `<span class="success">Foydalanuvchi ko'radi: ${s.display}</span>`;
+                    html += '</div>';
+                });
+                
+                html += '</div>';
+            });
+
+            document.getElementById('simulationResult').innerHTML = html;
+        }
+
+        // Sahifa yuklanganda testlarni ishga tushir
+        document.addEventListener('DOMContentLoaded', function() {
+            testUrlParameters();
+            
+            // Console loglarni ham ko'rsat
+            console.log('🧪 Test sahifasi yuklandi');
+            console.log('🔍 Barcha testlar consoleda ham ko\'rinadi');
+        });
+    </script>
+</body>
+</html>
