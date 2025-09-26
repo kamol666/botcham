@@ -639,21 +639,7 @@ ${expirationLabel} ${subscriptionEndDate}`;
         return;
       }
 
-      // Faol obuna bo'lsa ham, yangisini sotib olish imkoniyatini beramiz
-      // const existingSubscription =
-      //   await this.subscriptionService.getSubscription(user._id as string);
-      // if (existingSubscription?.isActive) {
-      //   const keyboard = new InlineKeyboard().text(
-      //     '📊 Obuna holati',
-      //     'check_status',
-      //   );
-
-      //   await ctx.editMessageText(
-      //     `⚠️ Siz allaqon obuna bo'lgansiz ✅\n\nObuna tugash muddati: ${existingSubscription.subscriptionEnd.getDate().toString().padStart(2, '0')}.${(existingSubscription.subscriptionEnd.getMonth() + 1).toString().padStart(2, '0')}.${existingSubscription.subscriptionEnd.getFullYear()}`,
-      //     { reply_markup: keyboard },
-      //   );
-      //   return;
-      // }
+      // Faol obuna bo'lsa ham, yangisini sotib olish imkoniyatini beramiz - bu qism o'chirildi
 
       ctx.session.hasAgreedToTerms = false;
       ctx.session.selectedService = 'yulduz'; // Set default service for Munajjimlar bashorati
@@ -755,22 +741,7 @@ ${expirationLabel} ${subscriptionEndDate}`;
           parse_mode: 'HTML',
         });
       } catch (error) {
-        // Faol obuna bo'lsa ham, yangisini sotib olish imkoniyatini beramiz
-        // if (
-        //   error instanceof Error &&
-        //   error.message === 'User already has an active subscription'
-        // ) {
-        //   const keyboard = new InlineKeyboard()
-        //     .text('📊 Obuna holati', 'check_status')
-        //     .row()
-        //     .text('🔙 Asosiy menyu', 'main_menu');
-
-        //   await ctx.editMessageText(
-        //     '⚠️ Siz allaqon faol obunaga egasiz. Obuna holatini tekshirish uchun quyidagi tugmani bosing:',
-        //     { reply_markup: keyboard },
-        //   );
-        //   return;
-        // }
+        // Bu qism butunlay o'chirildi
         logger.error('Subscription confirmation error:', error);
         await ctx.answerCallbackQuery(
           'Obunani tasdiqlashda xatolik yuz berdi.',
@@ -1292,21 +1263,7 @@ ${expirationLabel} ${subscriptionEndDate}`;
         });
       } catch (error) {
         // Faol obuna bo'lsa ham, yangisini sotib olish imkoniyatini beramiz (Dev test)
-        // if (
-        //   error instanceof Error &&
-        //   error.message === 'User already has an active subscription'
-        // ) {
-        //   const keyboard = new InlineKeyboard()
-        //     .text('📊 Obuna holati', 'check_status')
-        //     .row()
-        //     .text('🔙 Asosiy menyu', 'main_menu');
-
-        //   await ctx.editMessageText(
-        //     '⚠️ Siz allaqon faol obunaga egasiz. Obuna holatini tekshirish uchun quyidagi tugmani bosing:',
-        //     { reply_markup: keyboard },
-        //   );
-        //   return;
-        // }
+        // Bu qism butunlay o'chirildi - allaqon xabari endi yo'q
         logger.error('Dev test subscription error:', error);
         await ctx.answerCallbackQuery(
           'Obunani tasdiqlashda xatolik yuz berdi.',
