@@ -12,4 +12,4 @@ import { BotModule } from '../../bot/bot.module';
   providers: [ClickService, ClickShopService],
   exports: [ClickService, ClickShopService],
 })
-export class ClickModule {}
+export class ClickModule { }
