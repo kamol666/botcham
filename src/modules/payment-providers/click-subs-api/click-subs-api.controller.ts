@@ -59,12 +59,28 @@ export class ClickSubsApiController {
 
   @Post('/create-card-token')
   async createCardToken(@Body() requestBody: CreateCardTokenDto): Promise<CreateCardTokenResponseDto> {
-    return await this.clickSubsApiService.createCardtoken(requestBody);
+    try {
+      console.log('Create card token request:', {
+        card_number: requestBody.card_number?.substring(0, 6) + '******',
+        expire_date: requestBody.expire_date
+      });
+
+      return await this.clickSubsApiService.createCardtoken(requestBody);
+    } catch (error) {
+      console.error('Controller error in createCardToken:', error.message);
+      throw error;
+    }
   }
 
   @Post('/verify-card-token/')
   async verifyCardToken(@Body() requestBody: VerifyCardTokenDto) {
-    return await this.clickSubsApiService.verifyCardToken(requestBody);
+    try {
+      console.log('Verify card token request for token:', requestBody.card_token?.substring(0, 10) + '...');
+      return await this.clickSubsApiService.verifyCardToken(requestBody);
+    } catch (error) {
+      console.error('Controller error in verifyCardToken:', error.message);
+      throw error;
+    }
   }
 
 }

@@ -54,31 +54,81 @@ export class ClickSubsApiService {
         };
 
         try {
-
             console.log("Request data:", requestBodyWithServiceId);
+
+            // Karta raqamini formatlash - faqat raqamlar qoldirish
+            const cleanCardNumber = requestBody.card_number.replace(/\D/g, '');
+
+            // Karta raqami uzunligini tekshirish
+            if (cleanCardNumber.length < 16 || cleanCardNumber.length > 19) {
+                throw new Error(`Noto'g'ri karta raqami uzunligi: ${cleanCardNumber.length}. 16-19 raqam bo'lishi kerak.`);
+            }
+
+            // Expire date formatini tekshirish (MMYY yoki MMYYYY)
+            const expireDate = requestBody.expire_date.replace(/\D/g, '');
+            if (expireDate.length !== 4 && expireDate.length !== 6) {
+                throw new Error(`Noto'g'ri expire_date formati: ${requestBody.expire_date}. MMYY yoki MMYYYY formatida bo'lishi kerak.`);
+            }
+
+            // To'g'rilangan request data
+            const cleanedRequest = {
+                ...requestBodyWithServiceId,
+                card_number: cleanCardNumber,
+                expire_date: expireDate.length === 4 ? expireDate : expireDate.substring(0, 4) // MMYY formatga o'tkazish
+            };
+
+            console.log("Cleaned request data:", cleanedRequest);
+
             const response = await axios.post(
                 `${this.baseUrl}/card_token/request`,
-                requestBodyWithServiceId,
+                cleanedRequest,
                 { headers }
             );
 
             console.log("Received response data:", response.data);
 
             if (response.data.error_code !== 0) {
-                throw new Error("Response error code is not 0");
+                const errorMessage = this.getClickErrorMessage(response.data.error_code);
+                console.error(`Click API xatosi: ${response.data.error_code} - ${errorMessage}`);
+                throw new Error(`Click API xatosi: ${errorMessage} (Kod: ${response.data.error_code})`);
             }
+
             const result: CreateCardTokenResponseDto = new CreateCardTokenResponseDto();
-
-
             result.token = response.data.card_token;
             result.incompletePhoneNumber = response.data.phone_number;
 
             return result;
         } catch (error) {
-            // Handle errors appropriately
             console.error('Error creating card token:', error);
+            if (error.response?.data) {
+                console.error('API response error:', error.response.data);
+            }
             throw error;
         }
+    }
+
+    // Click xatolik kodlarini decode qilish
+    private getClickErrorMessage(errorCode: number): string {
+        const errorMessages = {
+            [-1]: 'Noma\'lum xatolik',
+            [-2]: 'Xizmat vaqtincha ishlamaydi',
+            [-3]: 'Noto\'g\'ri so\'rov',
+            [-4]: 'Noto\'g\'ri autentifikatsiya',
+            [-5]: 'Yetarli mablag\' yo\'q',
+            [-6]: 'Karta bloklangan',
+            [-7]: 'Karta muddati tugagan',
+            [-8]: 'Noto\'g\'ri PIN kod',
+            [-9]: 'Tranzaksiya bekor qilindi',
+            [-10]: 'Karta topilmadi',
+            [-11]: 'Noto\'g\'ri karta ma\'lumotlari',
+            [-400]: 'Noma\'lum karta turi yoki noto\'g\'ri format',
+            [-401]: 'Autentifikatsiya xatosi',
+            [-403]: 'Ruxsat berilmagan',
+            [-404]: 'Xizmat topilmadi',
+            [-500]: 'Server ichki xatosi'
+        };
+
+        return errorMessages[errorCode] || `Noma'lum xatolik kodi: ${errorCode}`;
     }
 
     async verifyCardToken(requestBody: VerifyCardTokenDto) {
