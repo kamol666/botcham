@@ -11,10 +11,15 @@ import {
 import { UserModel } from '../../../shared/database/models/user.model';
 import { BotService } from '../../bot/bot.service';
 import { Plan } from '../../../shared/database/models/plans.model';
+import axios from 'axios';
+import { createHash } from 'node:crypto';
 
 @Injectable()
 export class ClickService {
   private readonly secretKey: string;
+  private readonly serviceId: string;
+  private readonly merchantId: string;
+  private readonly merchantUserId: string;
 
   constructor(
     private readonly configService: ConfigService,
@@ -25,6 +30,16 @@ export class ClickService {
       throw new Error('CLICK_SECRET is not defined in the configuration');
     }
     this.secretKey = secretKey;
+    this.serviceId = this.configService.get<string>('CLICK_SERVICE_ID');
+    this.merchantId = this.configService.get<string>('CLICK_MERCHANT_ID');
+    this.merchantUserId = this.configService.get<string>('CLICK_MERCHANT_USER_ID');
+  }
+
+  // Helper metod: Oddiy MD5 hash yaratish
+  private createSimpleMD5Hash(data: string): string {
+    const hashFunc = createHash('md5');
+    hashFunc.update(data);
+    return hashFunc.digest('hex');
   }
 
   async handleMerchantTransactions(clickReqBody: ClickRequest) {
@@ -47,7 +62,7 @@ export class ClickService {
         };
     }
   }
-   
+
   async prepare(clickReqBody: ClickRequest) {
     logger.info('Preparing transaction', { clickReqBody });
 
@@ -224,15 +239,21 @@ export class ClickService {
       { transId: transId },
       { status: TransactionStatus.PAID },
     );
+
+    logger.info(`Transaction updated to PAID: ${transId}`);
+
     if (transaction) {
       try {
         const user = await UserModel.findById(transaction.userId).exec();
+        logger.info(`User found for payment success: ${user ? 'Yes' : 'No'}, TelegramId: ${user?.telegramId}`);
+
         if (user) {
           await this.botService.handlePaymentSuccess(
             transaction.userId.toString(),
             user.telegramId,
             user.username,
           );
+          logger.info(`Payment success handled for user: ${user.telegramId}`);
         }
       } catch (error) {
         logger.error('Error handling payment success:', error);
@@ -246,5 +267,114 @@ export class ClickService {
       error: ClickError.Success,
       error_note: 'Success',
     };
+  }
+
+  // Yangi metod: Click obunasini bekor qilish
+  async cancelSubscription(contractId: string): Promise<boolean> {
+    try {
+      logger.info(`Click obunasini bekor qilish: ${contractId}`);
+
+      // Click API uchun auth token yaratish
+      const authUrl = 'https://api.click.uz/v2/merchant';
+      const timestamp = Math.floor(Date.now() / 1000);
+
+      // Auth uchun signature yaratish
+      const signData = `${this.merchantUserId}${timestamp}${this.secretKey}`;
+      const signature = this.createSimpleMD5Hash(signData);
+
+      const authHeaders = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Auth': `${this.merchantUserId}:${signature}:${timestamp}`,
+      };
+
+      // Obunani bekor qilish so'rovi
+      const cancelData = {
+        service_id: parseInt(this.serviceId),
+        contract_id: contractId,
+        action: 'cancel_subscription',
+      };
+
+      const response = await axios.post(`${authUrl}/subscription/cancel`, cancelData, {
+        headers: authHeaders,
+        timeout: 30000,
+      });
+
+      if (response.data && response.data.error === 0) {
+        logger.info(`Click obuna muvaffaqiyatli bekor qilindi: ${contractId}`);
+        return true;
+      } else {
+        logger.error(`Click obuna bekor qilish xatosi: ${response.data?.error_note || 'Unknown error'}`);
+        return false;
+      }
+
+    } catch (error) {
+      logger.error(`Click API xatosi: ${error.response?.data || error.message}`);
+
+      // Agar API ishlamasa, bazadagi statusni o'zgartiramiz
+      try {
+        await Transaction.findOneAndUpdate(
+          { transId: contractId, provider: 'click' },
+          { status: TransactionStatus.CANCELED },
+        );
+        logger.info(`Click obuna bazada bekor qilindi: ${contractId}`);
+        return true;
+      } catch (dbError) {
+        logger.error(`Bazani yangilashda xatolik: ${dbError.message}`);
+        return false;
+      }
+    }
+  }
+
+  // Click obunalarini olish (ixtiyoriy)
+  async getActiveSubscriptions(): Promise<any[]> {
+    try {
+      const timestamp = Math.floor(Date.now() / 1000);
+      const signData = `${this.merchantUserId}${timestamp}${this.secretKey}`;
+      const signature = this.createSimpleMD5Hash(signData);
+
+      const authHeaders = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Auth': `${this.merchantUserId}:${signature}:${timestamp}`,
+      };
+
+      const response = await axios.get('https://api.click.uz/v2/merchant/subscription/list', {
+        headers: authHeaders,
+        params: { service_id: this.serviceId },
+        timeout: 30000,
+      });
+
+      return response.data?.data || [];
+    } catch (error) {
+      logger.error(`Click obunalar ro'yxatini olishda xatolik: ${error.message}`);
+      return [];
+    }
+  }
+
+  // Barcha faol Click obunalarini bekor qilish
+  async cancelAllActiveSubscriptions(): Promise<{ success: number; failed: number }> {
+    try {
+      const activeSubscriptions = await this.getActiveSubscriptions();
+      let successCount = 0;
+      let failedCount = 0;
+
+      for (const subscription of activeSubscriptions) {
+        const success = await this.cancelSubscription(subscription.contract_id || subscription.id);
+        if (success) {
+          successCount++;
+        } else {
+          failedCount++;
+        }
+        // API rate limit uchun kichik pauza
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      logger.info(`Click obunalar: ${successCount} bekor qilindi, ${failedCount} xato`);
+      return { success: successCount, failed: failedCount };
+    } catch (error) {
+      logger.error(`Barcha Click obunalarni bekor qilishda xatolik: ${error.message}`);
+      return { success: 0, failed: 0 };
+    }
   }
 }

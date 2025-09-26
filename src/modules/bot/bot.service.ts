@@ -246,6 +246,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         `⏰ Obuna tugash muddati: ${subscription.subscriptionEnd.getDate().toString().padStart(2, '0')}.${(subscription.subscriptionEnd.getMonth() + 1).toString().padStart(2, '0')}.${subscription.subscriptionEnd.getFullYear()}\n\n`;
 
       if (wasKickedOut) {
+        console.log('🔍 DEBUG: Unban uchun CHANNEL_ID:', config.CHANNEL_ID);
         await this.bot.api.unbanChatMember(config.CHANNEL_ID, telegramId);
         messageText +=
           `ℹ️ Sizning avvalgi bloklanishingiz bekor qilindi. ` +
@@ -785,6 +786,9 @@ ${expirationLabel} ${subscriptionEndDate}`;
         'Generating private channel invite link with channelId: ',
         config.CHANNEL_ID,
       );
+      console.log('DEBUG: CHANNEL_ID from config:', config.CHANNEL_ID);
+      console.log('DEBUG: CHANNEL_ID type:', typeof config.CHANNEL_ID);
+
       const link = await this.bot.api.createChatInviteLink(config.CHANNEL_ID, {
         member_limit: 1,
         expire_date: 0,
