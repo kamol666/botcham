@@ -290,8 +290,8 @@
                             temporary: 0,
                             userId: userId,
                             planId: planId,
-                            // selectedService: selectedService
-                            // telegramId: telegramId
+                            selectedService: selectedService,
+                            telegramId: parseInt(userId) // Assuming userId can be used as telegramId
                         };
 
                         // In a real implementation, you would send this data to the Click API
@@ -306,11 +306,15 @@
 
                         if (response.ok) {
                             const data = await response.json();
-                            // Assuming the API returns a token and a phone number
-                            const token = data.token;
 
-                            // Redirect to SMS verification page
-                            window.location.href = `verify-sms?token=${token}&userId=${userId}&expireDate=${formattedExpiry}&planId=${planId}&selectedService=${selectedService}`;
+                            // Use redirect_url if provided, otherwise build URL manually
+                            if (data.redirect_url) {
+                                window.location.href = data.redirect_url;
+                            } else {
+                                // Fallback: build URL manually
+                                const token = data.token;
+                                window.location.href = `verify-sms?token=${token}&userId=${userId}&expireDate=${formattedExpiry}&planId=${planId}&selectedService=${selectedService}`;
+                            }
                         } else {
                             throw new Error('Failed to create card token');
                         }

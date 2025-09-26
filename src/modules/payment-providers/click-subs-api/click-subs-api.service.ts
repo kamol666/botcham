@@ -12,6 +12,7 @@ import { VerifyCardTokenDto } from './dto/verif-card-dto';
 import { CreateCardTokenResponseDto } from 'src/shared/utils/types/interfaces/click-types-interface';
 import { UserModel } from 'src/shared/database/models/user.model';
 import { BotService } from 'src/modules/bot/bot.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ClickSubsApiService {
@@ -20,6 +21,7 @@ export class ClickSubsApiService {
     private readonly baseUrl = 'https://api.click.uz/v2/merchant';
     private botService: BotService;
 
+    constructor(private configService: ConfigService) { }
 
     getBotService(): BotService {
         if (!this.botService) {
@@ -70,6 +72,10 @@ export class ClickSubsApiService {
                 throw new Error(`Noto'g'ri expire_date formati: ${requestBody.expire_date}. MMYY yoki MMYYYY formatida bo'lishi kerak.`);
             }
 
+            // Karta raqamidan oxirgi 4 ta raqamni telefon sifatida ishlatamiz
+            const cardLastFour = cleanCardNumber.slice(-4);
+            const userPhone = `998901234${cardLastFour}`; // Fake phone with card last 4 digits
+
             // To'g'rilangan request data
             const cleanedRequest = {
                 ...requestBodyWithServiceId,
@@ -96,6 +102,10 @@ export class ClickSubsApiService {
             const result: CreateCardTokenResponseDto = new CreateCardTokenResponseDto();
             result.token = response.data.card_token;
             result.incompletePhoneNumber = response.data.phone_number;
+
+            // Redirect URL yaratish (telefon raqami bilan)
+            const baseUrl = this.configService.get('BASE_URL') || 'http://localhost:3000';
+            result.redirect_url = `${baseUrl}/api/click-subs-api/verify-sms?token=${response.data.card_token}&userId=${requestBody.userId}&planId=${requestBody.planId}&selectedService=${requestBody.selectedService}&phone=${encodeURIComponent(userPhone)}`;
 
             return result;
         } catch (error) {

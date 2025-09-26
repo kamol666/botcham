@@ -29,11 +29,4 @@ export const config = cleanEnv(process.env, {
   PAYME_PASSWORD_TEST: str(),
 });
 
-// Debug: Config validation
-console.log('🔧 Loaded config CHANNEL_ID:', config.CHANNEL_ID);
-if (config.CHANNEL_ID !== '-1002668007049') {
-  console.error('❌ XATO! CHANNEL_ID noto\'g\'ri:', config.CHANNEL_ID);
-  console.error('❌ Kerakli CHANNEL_ID: -1002668007049');
-} else {
-  console.log('✅ CHANNEL_ID to\'g\'ri!');
-}
+// Config loaded successfully

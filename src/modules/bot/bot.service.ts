@@ -113,7 +113,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         const endDate = new Date(subscription.subscriptionEnd);
         const endDateFormatted = `${endDate.getDate().toString().padStart(2, '0')}.${(endDate.getMonth() + 1).toString().padStart(2, '0')}.${endDate.getFullYear()}`;
 
-        let messageText = `✅ To'lov muvaffaqiyatli amalga oshirildi va kartangiz saqlandi!\n\n` +
+        let messageText = `✅ Siz obuna bo'lgansiz ✅ Kartangiz saqlandi!\n\n` +
           `📆 Yangi obuna muddati: ${endDateFormatted} gacha\n\n` +
           `Quyidagi havola orqali kanalga kirishingiz mumkin:`;
 
@@ -177,7 +177,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       const endDateFormatted = `${subscription.subscriptionEnd.getDate().toString().padStart(2, '0')}.${(subscription.subscriptionEnd.getMonth() + 1).toString().padStart(2, '0')}.${subscription.subscriptionEnd.getFullYear()}`;
 
 
-      let messageText = `🎉 Tabriklaymiz! Munajjimlar bashorati obunasi muvaffaqiyatli faollashtirildi!\n\n`;
+      let messageText = `🎉 Tabriklaymiz! Siz obuna bo'lgansiz ✅\n\n`;
 
       messageText += `📆 Obuna muddati: ${endDateFormatted} gacha\n\n`;
 
@@ -242,7 +242,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         .text('🔙 Asosiy menyu', 'main_menu');
 
       let messageText =
-        `🎉 Tabriklaymiz! To'lov muvaffaqiyatli amalga oshirildi!\n\n` +
+        `🎉 Tabriklaymiz! Siz obuna bo'lgansiz ✅\n\n` +
         `⏰ Obuna tugash muddati: ${subscription.subscriptionEnd.getDate().toString().padStart(2, '0')}.${(subscription.subscriptionEnd.getMonth() + 1).toString().padStart(2, '0')}.${subscription.subscriptionEnd.getFullYear()}\n\n`;
 
       if (wasKickedOut) {
@@ -317,7 +317,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       const bonusEndFormatted = `${subscription.subscriptionEnd.getDate().toString().padStart(2, '0')}.${(subscription.subscriptionEnd.getMonth() + 1).toString().padStart(2, '0')}.${subscription.subscriptionEnd.getFullYear()}`;
 
       let messageText =
-        `🎉 Tabriklaymiz! UzCard orqali ${plan.name} uchun obuna muvaffaqiyatli faollashtirildi!\n\n` +
+        `🎉 Tabriklaymiz! Siz obuna bo'lgansiz ✅\n\n` +
         `🎁 ${bonusDays} kunlik bonus: ${bonusEndFormatted} gacha\n\n`;
 
       if (wasKickedOut) {
@@ -382,7 +382,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
       const subscriptionEndDate = subscription.user.subscriptionEnd;
 
       messageText =
-        `🎉 Tabriklaymiz! Munajjimlar bashorati uchun to'lov muvaffaqiyatli amalga oshirildi!\n\n` +
+        `🎉 Tabriklaymiz! Siz obuna bo'lgansiz ✅\n\n` +
         `⏰ Obuna tugash muddati: ${subscriptionEndDate.getDate().toString().padStart(2, '0')}.${(subscriptionEndDate.getMonth() + 1).toString().padStart(2, '0')}.${subscriptionEndDate.getFullYear()}\n\n`;
 
       messageText += `Quyidagi havola orqali kanalga kirishingiz mumkin:`;
@@ -639,20 +639,21 @@ ${expirationLabel} ${subscriptionEndDate}`;
         return;
       }
 
-      const existingSubscription =
-        await this.subscriptionService.getSubscription(user._id as string);
-      if (existingSubscription?.isActive) {
-        const keyboard = new InlineKeyboard().text(
-          '📊 Obuna holati',
-          'check_status',
-        );
+      // Faol obuna bo'lsa ham, yangisini sotib olish imkoniyatini beramiz
+      // const existingSubscription =
+      //   await this.subscriptionService.getSubscription(user._id as string);
+      // if (existingSubscription?.isActive) {
+      //   const keyboard = new InlineKeyboard().text(
+      //     '📊 Obuna holati',
+      //     'check_status',
+      //   );
 
-        await ctx.editMessageText(
-          `⚠️ Siz allaqon obuna bo'lgansiz ✅\n\nObuna tugash muddati: ${existingSubscription.subscriptionEnd.getDate().toString().padStart(2, '0')}.${(existingSubscription.subscriptionEnd.getMonth() + 1).toString().padStart(2, '0')}.${existingSubscription.subscriptionEnd.getFullYear()}`,
-          { reply_markup: keyboard },
-        );
-        return;
-      }
+      //   await ctx.editMessageText(
+      //     `⚠️ Siz allaqon obuna bo'lgansiz ✅\n\nObuna tugash muddati: ${existingSubscription.subscriptionEnd.getDate().toString().padStart(2, '0')}.${(existingSubscription.subscriptionEnd.getMonth() + 1).toString().padStart(2, '0')}.${existingSubscription.subscriptionEnd.getFullYear()}`,
+      //     { reply_markup: keyboard },
+      //   );
+      //   return;
+      // }
 
       ctx.session.hasAgreedToTerms = false;
       ctx.session.selectedService = 'yulduz'; // Set default service for Munajjimlar bashorati
@@ -745,7 +746,7 @@ ${expirationLabel} ${subscriptionEndDate}`;
           .text('🔙 Asosiy menyu', 'main_menu');
 
         const messageText =
-          `🎉 Tabriklaymiz! Siz muvaffaqiyatli obuna bo'ldingiz!\n\n` +
+          `🎉 Tabriklaymiz! Siz obuna bo'lgansiz ✅\n\n` +
           `⏰ Obuna tugash muddati: ${subscription.subscriptionEnd.getDate().toString().padStart(2, '0')}.${(subscription.subscriptionEnd.getMonth() + 1).toString().padStart(2, '0')}.${subscription.subscriptionEnd.getFullYear()}\n\n` +
           `Quyidagi havola orqali kanalga kirishingiz mumkin:\n\n`;
 
@@ -754,21 +755,22 @@ ${expirationLabel} ${subscriptionEndDate}`;
           parse_mode: 'HTML',
         });
       } catch (error) {
-        if (
-          error instanceof Error &&
-          error.message === 'User already has an active subscription'
-        ) {
-          const keyboard = new InlineKeyboard()
-            .text('📊 Obuna holati', 'check_status')
-            .row()
-            .text('🔙 Asosiy menyu', 'main_menu');
+        // Faol obuna bo'lsa ham, yangisini sotib olish imkoniyatini beramiz
+        // if (
+        //   error instanceof Error &&
+        //   error.message === 'User already has an active subscription'
+        // ) {
+        //   const keyboard = new InlineKeyboard()
+        //     .text('📊 Obuna holati', 'check_status')
+        //     .row()
+        //     .text('🔙 Asosiy menyu', 'main_menu');
 
-          await ctx.editMessageText(
-            '⚠️ Siz allaqon faol obunaga egasiz. Obuna holatini tekshirish uchun quyidagi tugmani bosing:',
-            { reply_markup: keyboard },
-          );
-          return;
-        }
+        //   await ctx.editMessageText(
+        //     '⚠️ Siz allaqon faol obunaga egasiz. Obuna holatini tekshirish uchun quyidagi tugmani bosing:',
+        //     { reply_markup: keyboard },
+        //   );
+        //   return;
+        // }
         logger.error('Subscription confirmation error:', error);
         await ctx.answerCallbackQuery(
           'Obunani tasdiqlashda xatolik yuz berdi.',
@@ -1274,7 +1276,7 @@ ${expirationLabel} ${subscriptionEndDate}`;
           .text('🔙 Asosiy menyu', 'main_menu');
 
         let messageText =
-          `🎉 DEV TEST: Muvaffaqiyatli obuna bo'ldingiz!\n\n` +
+          `🎉 DEV TEST: Siz obuna bo'lgansiz ✅\n\n` +
           `⏰ Obuna tugash muddati: ${subscription.subscriptionEnd.toLocaleDateString()}\n\n` +
           `[DEV MODE] To'lov talab qilinmadi\n\n`;
 
@@ -1289,21 +1291,22 @@ ${expirationLabel} ${subscriptionEndDate}`;
           parse_mode: 'HTML',
         });
       } catch (error) {
-        if (
-          error instanceof Error &&
-          error.message === 'User already has an active subscription'
-        ) {
-          const keyboard = new InlineKeyboard()
-            .text('📊 Obuna holati', 'check_status')
-            .row()
-            .text('🔙 Asosiy menyu', 'main_menu');
+        // Faol obuna bo'lsa ham, yangisini sotib olish imkoniyatini beramiz (Dev test)
+        // if (
+        //   error instanceof Error &&
+        //   error.message === 'User already has an active subscription'
+        // ) {
+        //   const keyboard = new InlineKeyboard()
+        //     .text('📊 Obuna holati', 'check_status')
+        //     .row()
+        //     .text('🔙 Asosiy menyu', 'main_menu');
 
-          await ctx.editMessageText(
-            '⚠️ Siz allaqon faol obunaga egasiz. Obuna holatini tekshirish uchun quyidagi tugmani bosing:',
-            { reply_markup: keyboard },
-          );
-          return;
-        }
+        //   await ctx.editMessageText(
+        //     '⚠️ Siz allaqon faol obunaga egasiz. Obuna holatini tekshirish uchun quyidagi tugmani bosing:',
+        //     { reply_markup: keyboard },
+        //   );
+        //   return;
+        // }
         logger.error('Dev test subscription error:', error);
         await ctx.answerCallbackQuery(
           'Obunani tasdiqlashda xatolik yuz berdi.',

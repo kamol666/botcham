@@ -25,5 +25,7 @@ export class CreateCardTokenDto {
     @IsNotEmpty()
     telegramId: number;
 
+    @IsNotEmpty()
+    selectedService: string;
 
 }
