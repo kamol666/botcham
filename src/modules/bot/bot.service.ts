@@ -71,6 +71,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
 
   public async stop(): Promise<void> {
     logger.info('Stopping bot...');
+    this.subscriptionChecker.stop();
     await this.bot.stop();
   }
 
@@ -559,6 +560,8 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         );
         return;
       }
+
+      await this.subscriptionMonitorService.handleExpiredSubscriptions();
 
       if (!user.subscriptionStart && !user.subscriptionEnd) {
         const keyboard = new InlineKeyboard()
