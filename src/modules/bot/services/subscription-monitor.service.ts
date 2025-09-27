@@ -5,6 +5,7 @@ import {
   UserModel,
 } from '../../../shared/database/models/user.model';
 import logger from '../../../shared/utils/logger';
+import { ChangeStream, ChangeStreamDocument } from 'mongodb';
 
 interface SessionData {
   pendingSubscription?: {
@@ -16,9 +17,44 @@ type BotContext = Context & SessionFlavor<SessionData>;
 
 export class SubscriptionMonitorService {
   private bot: Bot<BotContext>;
+  private changeStream?: ChangeStream<IUserDocument>;
 
   constructor(bot: Bot<BotContext>) {
     this.bot = bot;
+  }
+
+  async startWatching(): Promise<void> {
+    if (this.changeStream) {
+      return;
+    }
+
+    try {
+      this.changeStream = UserModel.watch([], { fullDocument: 'updateLookup' });
+
+      this.changeStream.on('change', (change) => {
+        this.handleUserChange(change).catch((error) =>
+          logger.error('Error handling user change stream event:', error),
+        );
+      });
+
+      this.changeStream.on('error', (error) => {
+        logger.error('Subscription watch stream error:', error);
+      });
+
+      logger.info('Subscription monitor change stream started');
+    } catch (error: any) {
+      logger.warn(
+        'MongoDB change streams unavailable. Instant subscription checks disabled.',
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+
+  async stopWatching(): Promise<void> {
+    if (this.changeStream) {
+      await this.changeStream.close();
+      this.changeStream = undefined;
+    }
   }
 
   async checkExpiringSubscriptions(): Promise<void> {
@@ -119,5 +155,47 @@ export class SubscriptionMonitorService {
     } catch (error) {
       logger.error(`Error handling expired user ${user.telegramId}:`, error);
     }
+  }
+
+  private async handleUserChange(
+    change: ChangeStreamDocument<IUserDocument>,
+  ): Promise<void> {
+    if (!['update', 'replace'].includes(change.operationType)) {
+      return;
+    }
+
+    if (
+      change.operationType === 'update' &&
+      !this.hasRelevantUpdates(change.updateDescription?.updatedFields || {})
+    ) {
+      return;
+    }
+
+    const doc = change.fullDocument as unknown as IUserDocument | undefined;
+    if (!doc) {
+      return;
+    }
+
+    const now = new Date();
+    const subscriptionEnd = doc.subscriptionEnd as Date | undefined;
+    const shouldKick =
+      doc.isActive === false ||
+      (!!subscriptionEnd && subscriptionEnd < now);
+
+    if (!shouldKick || doc.isKickedOut) {
+      return;
+    }
+
+    const freshUser = await UserModel.findById(doc._id);
+    if (freshUser) {
+      await this.handleExpiredUser(freshUser);
+    }
+  }
+
+  private hasRelevantUpdates(updatedFields: Record<string, any>): boolean {
+    return (
+      Object.prototype.hasOwnProperty.call(updatedFields, 'isActive') ||
+      Object.prototype.hasOwnProperty.call(updatedFields, 'subscriptionEnd')
+    );
   }
 }

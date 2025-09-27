@@ -51,6 +51,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit(): Promise<void> {
     await seedBasicPlan();
+    await this.subscriptionMonitorService.startWatching();
     // Start the bot asynchronously to avoid blocking application startup
     this.startAsync();
   }
@@ -72,6 +73,7 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
   public async stop(): Promise<void> {
     logger.info('Stopping bot...');
     this.subscriptionChecker.stop();
+    await this.subscriptionMonitorService.stopWatching();
     await this.bot.stop();
   }
 
