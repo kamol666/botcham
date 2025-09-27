@@ -273,6 +273,8 @@ export class ClickSubsApiService {
 
             console.log(plan)
 
+            const alreadyHadFreeBonus = !!user.hasReceivedFreeBonus;
+
 
             const time = new Date().getTime();
             logger.info(`Creating user card for user ID: ${requestBody.userId}, with card token: ${requestBody.card_token}`);
@@ -336,35 +338,41 @@ export class ClickSubsApiService {
                 hasReceivedFreeBonus: true
             });
             const successResult = response.data;
-            if (user.hasReceivedFreeBonus) {
-                if (requestBody.selectedService === 'yulduz') {
-                    await this.getBotService().handleCardAddedWithoutBonus(
-                        requestBody.userId,
-                        user.telegramId,
-                        CardType.PAYME,
-                        plan,
-                        user.username,
-                        requestBody.selectedService
-                    );
-                    return successResult;
-                }
-
+            user.subscriptionType = 'subscription';
+            if (!alreadyHadFreeBonus) {
+                user.hasReceivedFreeBonus = true;
             }
-            user.subscriptionType = 'subscription'
             await user.save();
 
+            if (!alreadyHadFreeBonus) {
+                logger.info(`Free Click trial activated for user ${requestBody.userId}; skipping immediate charge.`);
 
-            if (requestBody.selectedService === 'yulduz') {
-                await this.getBotService().handleAutoSubscriptionSuccess(
-                    requestBody.userId,
-                    user.telegramId,
-                    requestBody.planId,
-                    user.username
-                );
+                if (requestBody.selectedService === 'yulduz') {
+                    await this.getBotService().handleAutoSubscriptionSuccess(
+                        requestBody.userId,
+                        user.telegramId,
+                        requestBody.planId,
+                        user.username
+                    );
+                }
+
+                return { ...successResult, success: true, trial: true };
             }
 
+            const chargeResult = await this.chargeCard(
+                userCard.cardToken,
+                plan.price,
+                requestBody.planId,
+                requestBody.userId,
+            );
 
-            return response.data;
+            if (!chargeResult.success) {
+                logger.error(`Click charge failed for user ${requestBody.userId}; removing temporary subscription record.`);
+                await UserSubscription.deleteOne({ user: requestBody.userId, plan: requestBody.planId });
+                return { success: false };
+            }
+
+            return { success: true };
         } catch (error) {
             console.error('Error verifying card token:', error);
             throw error;
@@ -405,10 +413,10 @@ export class ClickSubsApiService {
         const payload = {
             service_id: this.serviceId,
             card_token: userCard.cardToken,
-            amount: "5555",
-            transaction_parameter: "67a35e3f20d13498efcac2f0",
+            amount: plan.price.toString(),
+            transaction_parameter: plan._id.toString(),
             transaction_param3: requestBody.userId,
-            transaction_param4: "merchant" // test this later
+            transaction_param4: 'merchant',
         };
 
         try {
@@ -495,7 +503,7 @@ export class ClickSubsApiService {
             service_id: parseInt(this.serviceId!),
             card_token: cardToken,
             amount: amount,
-            transaction_parameter: planId
+            transaction_parameter: planId,
         };
 
         try {
@@ -505,8 +513,13 @@ export class ClickSubsApiService {
                 { headers }
             );
 
-            if (response.data.error_code !== 0) {
-                throw new Error(`Payment failed: ${response.data.error_note}`);
+            const { error_code, error_note } = response.data;
+
+            if (error_code !== 0) {
+                logger.error(
+                    `Click charge rejected for user ${userId}: code=${error_code}, note=${error_note}`,
+                );
+                return { success: false, error_code, error_note };
             }
 
             // Create transaction record
@@ -524,7 +537,15 @@ export class ClickSubsApiService {
 
             return { success: true, transId };
         } catch (error) {
-            logger.error('Error charging card:', error);
+            if (axios.isAxiosError(error) && error.response) {
+                logger.error(
+                    'Error charging card (response):',
+                    error.response.status,
+                    error.response.data,
+                );
+            } else {
+                logger.error('Error charging card:', error);
+            }
             return { success: false };
         }
     }
