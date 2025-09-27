@@ -4,25 +4,29 @@ export type ClickRedirectParams = {
   amount: number;
   planId: string;
   userId: string;
+  selectedService?: string;
 };
 const CLICK_URL = `https://my.click.uz`;
-const BOT_URL = 'https://t.me/Yulduz_bashorati_bot';
+const BOT_URL = 'https://t.me/n17kamolBot';
 
 export function getClickRedirectLink(params: ClickRedirectParams) {
   const configService = new ConfigService();
   const serviceId = configService.get<number>('CLICK_SERVICE_ID');
   const merchantId = configService.get<string>('CLICK_MERCHANT_ID');
+  const selectedService = params.selectedService ?? 'yulduz';
 
-  console.log('CLICK_URL:', CLICK_URL);
-  console.log('BOT_URL:', BOT_URL);
-  console.log('params:', params);
-  console.log('serviceId:', serviceId);
-  console.log('merchantId:', merchantId);
-  console.log('amount:', params.amount);
-  console.log('planId:', params.planId);
-  console.log('userId:', params.userId);
+  const searchParams = new URLSearchParams({
+    service_id: String(serviceId),
+    merchant_id: String(merchantId),
+    amount: String(params.amount),
+    transaction_param: params.planId,
+    return_url: BOT_URL,
+  });
 
-  return `${CLICK_URL}/services/pay?service_id=${serviceId}&merchant_id=${merchantId}&amount=${params.amount}&transaction_param=${params.planId}&additional_param3=${params.userId}&return_url=${BOT_URL}`;
+  searchParams.append('additional_param2', params.userId);
+  searchParams.append('additional_param3', selectedService);
+
+  return `${CLICK_URL}/services/pay?${searchParams.toString()}`;
 }
 
 // &return_url=https://t.me/sportsuz_premium_bot

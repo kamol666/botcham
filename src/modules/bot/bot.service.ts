@@ -1019,7 +1019,6 @@ ${expirationLabel} ${subscriptionEndDate}`;
       userId: userId,
     });
 
-    // Click SHOP-API ishlatamiz (xavfsiz session bilan)
     let clickShopUrl: string;
 
     try {
@@ -1030,15 +1029,20 @@ ${expirationLabel} ${subscriptionEndDate}`;
         planId: plan._id.toString(),
         selectedService,
         amount: plan.price,
-        provider: 'click-shop',
+        provider: 'click',
         status: 'pending',
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
       });
 
       clickShopUrl = `${config.BASE_URL}/api/click-shop/initiate-payment/${sessionToken}`;
     } catch (error) {
-      logger.error('Click payment session yaratishda xatolik', error);
-      clickShopUrl = `${config.BASE_URL}/api/click-shop/create-payment-redirect?userId=${userId}&planId=${plan._id}&selectedService=${selectedService}`;
+      logger.error('Click sessiya yaratishda xatolik', error);
+      clickShopUrl = getClickRedirectLink({
+        amount: plan.price,
+        planId: plan._id as string,
+        userId,
+        selectedService,
+      });
     }
     const uzcardOneTimePaymentLink = `${config.BASE_URL}/api/uzcard-onetime-api/card-form?userId=${userId}&planId=${plan._id}&selectedService=${selectedService}`;
 

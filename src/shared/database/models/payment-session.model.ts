@@ -39,7 +39,7 @@ const paymentSessionSchema = new Schema({
     provider: {
         type: String,
         required: true,
-        enum: ['click-shop', 'uzcard', 'payme']
+        enum: ['click', 'click-shop', 'uzcard', 'payme']
     },
     status: {
         type: String,

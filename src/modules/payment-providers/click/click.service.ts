@@ -5,6 +5,8 @@ import { ClickAction, ClickError } from './enums';
 import logger from '../../../shared/utils/logger';
 import { generateMD5 } from '../../../shared/utils/hashing/hasher.helper';
 import {
+  PaymentProvider,
+  PaymentTypes,
   Transaction,
   TransactionStatus,
 } from '../../../shared/database/models/transactions.model';
@@ -67,7 +69,8 @@ export class ClickService {
     logger.info('Preparing transaction', { clickReqBody });
 
     const planId = clickReqBody.merchant_trans_id;
-    const userId = clickReqBody.param2;
+    const userId = clickReqBody.param2 || clickReqBody.param3;
+    const selectedService = clickReqBody.param3 || 'yulduz';
     const amount = clickReqBody.amount;
     const transId = clickReqBody.click_trans_id + '';
     const signString = clickReqBody.sign_string;
@@ -109,9 +112,11 @@ export class ClickService {
     // Create a new transaction only if it doesn't exist or is in a PENDING state
     const time = new Date().getTime();
     await Transaction.create({
-      provider: 'click',
+      provider: PaymentProvider.CLICK,
+      paymentType: PaymentTypes.ONETIME,
       planId,
       userId,
+      selectedService,
       signTime,
       transId,
       prepareId: time,
@@ -133,7 +138,7 @@ export class ClickService {
     logger.info('Completing transaction', { clickReqBody });
 
     const planId = clickReqBody.merchant_trans_id;
-    const userId = clickReqBody.param2;
+    const userId = clickReqBody.param2 || clickReqBody.param3;
     const prepareId = clickReqBody.merchant_prepare_id;
     const transId = clickReqBody.click_trans_id + '';
     const serviceId = clickReqBody.service_id;
