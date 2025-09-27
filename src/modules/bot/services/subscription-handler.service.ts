@@ -36,6 +36,8 @@ export class SubscriptionHandlerService {
     userId: string,
     telegramId: number,
     username?: string,
+    planId?: string,
+    selectedService: string = 'yulduz',
   ): Promise<void> {
     // ... existing handlePaymentSuccess implementation ...
   }

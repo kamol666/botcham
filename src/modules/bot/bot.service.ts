@@ -12,10 +12,12 @@ import {
   ClickRedirectParams,
   getClickRedirectLink,
 } from '../../shared/generators/click-redirect-link.generator';
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
+import { randomBytes } from 'crypto';
 import { CardType, UserCardsModel } from "../../shared/database/models/user-cards.model";
 import { FlowStepType, SubscriptionFlowTracker } from 'src/shared/database/models/subscription.follow.tracker';
 import { seedBasicPlan } from '../../shared/database/seeders/planSeeder';
+import { PaymentSession } from '../../shared/database/models/payment-session.model';
 
 interface SessionData {
   pendingSubscription?: {
@@ -217,14 +219,17 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
     userId: string,
     telegramId: number,
     username?: string,
+    planId?: string,
+    selectedService: string = 'yulduz',
   ): Promise<void> {
-    console.log('WATCH! @@@ handlePaymentSuccess is being called! ');
-
     try {
-      const plan = await Plan.findOne({ name: 'Basic' });
+      const planFilter = planId ? { _id: planId } : { name: 'Yulduz bashorati' };
+      const plan = await Plan.findOne(planFilter);
 
       if (!plan) {
-        logger.error('No plan found with name "Basic"');
+        logger.error(
+          `handlePaymentSuccess: Plan topilmadi. Filter: ${JSON.stringify(planFilter)}`,
+        );
         return;
       }
 
@@ -245,8 +250,12 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         `🎉 Tabriklaymiz! Siz obuna bo'lgansiz ✅\n\n` +
         `⏰ Obuna tugash muddati: ${subscription.subscriptionEnd.getDate().toString().padStart(2, '0')}.${(subscription.subscriptionEnd.getMonth() + 1).toString().padStart(2, '0')}.${subscription.subscriptionEnd.getFullYear()}\n\n`;
 
+      await UserModel.updateOne(
+        { telegramId },
+        { $set: { subscribedTo: selectedService } },
+      );
+
       if (wasKickedOut) {
-        console.log('🔍 DEBUG: Unban uchun CHANNEL_ID:', config.CHANNEL_ID);
         await this.bot.api.unbanChatMember(config.CHANNEL_ID, telegramId);
         messageText +=
           `ℹ️ Sizning avvalgi bloklanishingiz bekor qilindi. ` +
@@ -259,7 +268,6 @@ export class BotService implements OnModuleInit, OnModuleDestroy {
         reply_markup: keyboard,
         parse_mode: 'HTML',
       });
-      console.log('WATCH! @@@ handlePaymentSuccess sent the message');
     } catch (error) {
       logger.error('Payment success handling error:', error);
       await this.bot.api.sendMessage(
@@ -709,11 +717,11 @@ ${expirationLabel} ${subscriptionEndDate}`;
       }
 
       const plan = await Plan.findOne({
-        name: 'Basic',
+        name: 'Yulduz bashorati',
       });
 
       if (!plan) {
-        logger.error('No plan found with name "Basic"');
+        logger.error('No plan found with name "Yulduz bashorati"');
         return;
       }
 
@@ -1012,7 +1020,26 @@ ${expirationLabel} ${subscriptionEndDate}`;
     });
 
     // Click SHOP-API ishlatamiz (xavfsiz session bilan)
-    const clickShopUrl = `${config.BASE_URL}/api/click-shop/create-payment-redirect?userId=${userId}&planId=${plan._id}&selectedService=${selectedService}`;
+    let clickShopUrl: string;
+
+    try {
+      const sessionToken = randomBytes(32).toString('hex');
+      await PaymentSession.create({
+        sessionToken,
+        userId,
+        planId: plan._id.toString(),
+        selectedService,
+        amount: plan.price,
+        provider: 'click-shop',
+        status: 'pending',
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+      });
+
+      clickShopUrl = `${config.BASE_URL}/api/click-shop/initiate-payment/${sessionToken}`;
+    } catch (error) {
+      logger.error('Click payment session yaratishda xatolik', error);
+      clickShopUrl = `${config.BASE_URL}/api/click-shop/create-payment-redirect?userId=${userId}&planId=${plan._id}&selectedService=${selectedService}`;
+    }
     const uzcardOneTimePaymentLink = `${config.BASE_URL}/api/uzcard-onetime-api/card-form?userId=${userId}&planId=${plan._id}&selectedService=${selectedService}`;
 
     return new InlineKeyboard()
@@ -1216,11 +1243,11 @@ ${expirationLabel} ${subscriptionEndDate}`;
       }
 
       const plan = await Plan.findOne({
-        name: 'Basic',
+        name: 'Yulduz bashorati',
       });
 
       if (!plan) {
-        logger.error('No plan found with name "Basic"');
+        logger.error('No plan found with name "Yulduz bashorati"');
         return;
       }
 

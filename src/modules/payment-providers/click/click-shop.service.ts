@@ -1,7 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
-import { Transaction, TransactionStatus } from '../../../shared/database/models/transactions.model';
+import {
+    PaymentProvider,
+    PaymentTypes,
+    Transaction,
+    TransactionStatus,
+} from '../../../shared/database/models/transactions.model';
 import { BotService } from '../../bot/bot.service';
 import { UserModel } from '../../../shared/database/models/user.model';
 import { Plan } from '../../../shared/database/models/plans.model';
@@ -26,6 +31,8 @@ export class ClickShopService {
     // Xavfsiz payment session yaratish
     async createPaymentSession(createPaymentDto: any) {
         try {
+            const selectedService = createPaymentDto.selectedService || 'yulduz';
+
             this.logger.log('Payment session yaratish:', {
                 userId: createPaymentDto.userId,
                 planId: createPaymentDto.planId,
@@ -46,7 +53,7 @@ export class ClickShopService {
                 sessionToken,
                 userId: createPaymentDto.userId,
                 planId: createPaymentDto.planId,
-                selectedService: createPaymentDto.selectedService,
+                selectedService,
                 amount: plan.price,
                 provider: 'click-shop',
                 status: 'pending',
@@ -99,7 +106,8 @@ export class ClickShopService {
                 selectedService: session.selectedService,
                 amount: session.amount,
                 currency: 'UZS',
-                provider: 'click-shop',
+                provider: PaymentProvider.CLICK,
+                paymentType: PaymentTypes.ONETIME,
                 status: TransactionStatus.PENDING,
                 transId: merchantTransId,
                 metadata: {
@@ -172,6 +180,9 @@ export class ClickShopService {
                 merchant_prepare_id
             } = callbackDto;
 
+            const actionCode = Number(action);
+            const errorCode = Number(error);
+
             // Sign tekshirish
             if (!this.verifySignature(callbackDto)) {
                 this.logger.error('Invalid signature');
@@ -198,12 +209,12 @@ export class ClickShopService {
                 };
             }
 
-            if (action === 0) {
+            if (actionCode === 0) {
                 // PREPARE stage
                 return await this.handlePrepare(callbackDto, transaction);
-            } else if (action === 1) {
+            } else if (actionCode === 1) {
                 // COMPLETE stage
-                return await this.handleComplete(callbackDto, transaction);
+                return await this.handleComplete({ ...callbackDto, error: errorCode }, transaction);
             }
 
         } catch (error) {
@@ -303,6 +314,8 @@ export class ClickShopService {
                     transaction.userId.toString(),
                     user.telegramId,
                     user.username,
+                    transaction.planId ? String(transaction.planId) : undefined,
+                    transaction.selectedService || 'yulduz',
                 );
                 this.logger.log('Foydalanuvchi obuna qilindi:', user.telegramId);
             }
@@ -334,8 +347,10 @@ export class ClickShopService {
             sign_string
         } = callbackDto;
 
+        const normalizedAction = Number(action);
+
         let dataString;
-        if (action === 0) {
+        if (normalizedAction === 0) {
             // Prepare uchun
             dataString = `${click_trans_id}${service_id}${this.secretKey}${merchant_trans_id}${amount}${action}${sign_time}`;
         } else {

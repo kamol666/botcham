@@ -374,6 +374,8 @@ export class PaymeService {
           transaction.userId.toString(),
           user.telegramId,
           user.username,
+          transaction.planId ? String(transaction.planId) : undefined,
+          transaction.selectedService || 'yulduz',
         );
       }
     } catch (error) {

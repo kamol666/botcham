@@ -252,6 +252,8 @@ export class ClickService {
             transaction.userId.toString(),
             user.telegramId,
             user.username,
+            transaction.planId ? String(transaction.planId) : undefined,
+            transaction.selectedService || 'yulduz',
           );
           logger.info(`Payment success handled for user: ${user.telegramId}`);
         }
