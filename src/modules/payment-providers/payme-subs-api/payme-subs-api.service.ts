@@ -186,7 +186,7 @@ export class PaymeSubsApiService {
             logger.info(`User found: ${user}`);
 
             const existingUserCard = await UserCardsModel.findOne({
-                incompleteCardNumber: response.data.result.card.number
+                incompleteCardNumber: response.data.result.card.number,
             });
 
             try {
@@ -195,6 +195,15 @@ export class PaymeSubsApiService {
 
                 let userCard;
                 if (existingUserCard) {
+                    if (existingUserCard.userId?.toString() !== requestBody.userId) {
+                        return {
+                            success: false,
+                            error: {
+                                code: -6,
+                                message: 'Bu karta oldin boshqa foydalanuvchi tomonidan qo\'shilgan.',
+                            },
+                        };
+                    }
                     // Update existing card
                     logger.info(`Updating existing card for incomplete number: ${response.data.result.card.number}`);
                     userCard = await UserCardsModel.findByIdAndUpdate(
@@ -206,9 +215,10 @@ export class PaymeSubsApiService {
                             verified: true,
                             verifiedDate: new Date(time),
                             userId: requestBody.userId,
-                            planId: requestBody.planId
+                            planId: requestBody.planId,
+                            cardType: CardType.PAYME,
                         },
-                        { new: true }
+                        { new: true },
                     );
                 } else {
                     // Create new card
@@ -224,20 +234,26 @@ export class PaymeSubsApiService {
                         verificationCode: requestBody.code,
                         verified: true,
                         verifiedDate: new Date(time),
-                        cardType: CardType.PAYME
+                        cardType: CardType.PAYME,
                     });
                 }
 
-                user.subscriptionType = 'subscription'
-                await user.save();
-
                 const plan = await Plan.findOne({
-                    _id: requestBody.planId
+                    _id: requestBody.planId,
                 });
                 if (!plan) {
                     logger.error(`Plan not found for ID: ${requestBody.planId}`);
                     throw new Error('Plan not found');
                 }
+
+                const selectedService = requestBody.selectedService || 'yulduz';
+                const alreadyHadFreeBonus = !!user.hasReceivedFreeBonus;
+
+                user.subscriptionType = 'subscription';
+                if (!alreadyHadFreeBonus) {
+                    user.hasReceivedFreeBonus = true;
+                }
+                await user.save();
 
                 const successResult = {
                     success: true,
@@ -258,40 +274,32 @@ export class PaymeSubsApiService {
                     isActive: true,
                     autoRenew: true,
                     status: 'active',
+                    paidAmount: plan.price,
                     paidBy: CardType.PAYME,
                     subscribedBy: CardType.PAYME,
                     hasReceivedFreeBonus: true
                 });
 
-                if (user.hasReceivedFreeBonus) {
-                    if (requestBody.selectedService === 'yulduz') {
-                        await this.getBotService().handleCardAddedWithoutBonus(
-                            requestBody.userId,
-                            user.telegramId,
-                            CardType.PAYME,
-                            plan,
-                            user.username,
-                            requestBody.selectedService
-                        );
-                        return successResult;
-                    }
-
-                }
-
-                if (requestBody.selectedService === 'yulduz') {
-                    await this.getBotService().handleAutoSubscriptionSuccess(
+                if (alreadyHadFreeBonus) {
+                    await this.getBotService().handleCardAddedWithoutBonus(
                         requestBody.userId,
                         user.telegramId,
-                        requestBody.planId,
-                        user.username
+                        CardType.PAYME,
+                        plan,
+                        user.username,
+                        selectedService,
                     );
+                    return successResult;
                 }
 
+                await this.getBotService().handleAutoSubscriptionSuccess(
+                    requestBody.userId,
+                    user.telegramId,
+                    requestBody.planId,
+                    user.username,
+                );
 
-                return {
-                    success: true,
-                    result: response.data.result
-                };
+                return successResult;
             } catch (error) {
                 logger.error('Error processing successful verification:', error);
                 return {
@@ -366,6 +374,58 @@ export class PaymeSubsApiService {
 
     }
 
+    async deleteCardToken(telegramId: number) {
+        const userCard = await UserCardsModel.findOne({ telegramId });
+        if (!userCard) {
+            logger.error(`User card not found for Telegram ID: ${telegramId}`);
+            return {
+                success: false,
+                error: {
+                    code: -2,
+                    message: 'User card not found'
+                }
+            };
+        }
+
+        const headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'X-Auth': this.PAYME_X_AUTH_CARDS,
+            'Cache-Control': 'no-cache'
+        };
+
+        const cardDeleteRequest = {
+            id: 123,
+            method: 'cards.remove',
+            params: {
+                token: userCard.cardToken,
+            },
+        };
+
+        try {
+            const response = await axios.post(
+                this.baseUrl,
+                cardDeleteRequest,
+                { headers }
+            );
+
+            logger.info(`Response from delete card token in PAYME: ${JSON.stringify(response.data)}`);
+            return {
+                success: true,
+                result: response.data.result
+            };
+        } catch (error) {
+            logger.error('Error deleting card token:', error);
+            return {
+                success: false,
+                error: {
+                    code: -1,
+                    message: 'Error connecting to payment service'
+                }
+            };
+        }
+    }
+
 
     async payReceipt(receiptId: string, userId: string, planId: string) {
         const headers = {
@@ -438,17 +498,15 @@ export class PaymeSubsApiService {
             const customRandomId = `subscription-payme-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
 
 
-            const transaction = await Transaction.create(
-                {
-                    provider: PaymentProvider.PAYME,
-                    paymentType: PaymentTypes.SUBSCRIPTION,
-                    transId: receiptId ? receiptId : customRandomId,
-                    amount: '5555',
-                    status: TransactionStatus.PAID,
-                    userId: userId,
-                    planId: planId,
-                }
-            )
+            const transaction = await Transaction.create({
+                provider: PaymentProvider.PAYME,
+                paymentType: PaymentTypes.SUBSCRIPTION,
+                transId: receiptId ? receiptId : customRandomId,
+                amount: plan.price,
+                status: TransactionStatus.PAID,
+                userId: userId,
+                planId: planId,
+            });
 
             user.subscriptionType = 'subscription'
             await user.save();
@@ -467,6 +525,7 @@ export class PaymeSubsApiService {
                 isActive: true,
                 autoRenew: true,
                 status: 'active',
+                paidAmount: plan.price,
                 paidBy: CardType.PAYME,
                 subscribedBy: CardType.PAYME,
                 hasReceivedFreeBonus: true

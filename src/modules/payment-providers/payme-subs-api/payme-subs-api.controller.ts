@@ -75,4 +75,9 @@ export class PaymeSubsApiController {
     return await this.paymeSubsApiService.resendCode(requestBody);
   }
 
+  @Post('/delete-card-token')
+  async deleteCardToken(@Body('telegramId') telegramId: number) {
+    return await this.paymeSubsApiService.deleteCardToken(telegramId);
+  }
+
 }
