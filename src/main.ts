@@ -24,6 +24,12 @@ async function bootstrap() {
   console.log(`🔍 Final port: ${port}`);
   console.log(`🔍 Final server IP: ${serverIP}`);
 
+  // Additional debug logging
+  console.log(`🔍 About to listen on: ${serverIP}:${port}`);
+  console.log(`🔍 serverIP type: ${typeof serverIP}`);
+  console.log(`🔍 serverIP length: ${serverIP?.length}`);
+  console.log(`🔍 serverIP === '213.230.110.176': ${serverIP === '213.230.110.176'}`);
+
   app.setGlobalPrefix('api');
 
   await connectDB();
@@ -37,7 +43,7 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
-  
+
   logger.info(`Starting application on ${serverIP}:${port}`);
 
   try {

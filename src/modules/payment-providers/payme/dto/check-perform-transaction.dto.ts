@@ -8,6 +8,7 @@ export class CheckPerformTransactionDto {
       plan_id: string;
       user_id: string;
       selected_service?: string;
+      selected_sport?: string;
     };
   };
 }

@@ -65,7 +65,8 @@ export class PaymeService {
     const planId = checkPerformTransactionDto.params?.account?.plan_id;
     const userId = checkPerformTransactionDto.params?.account?.user_id;
     const selectedService =
-      checkPerformTransactionDto.params?.account?.selected_service;
+      checkPerformTransactionDto.params?.account?.selected_service ??
+      checkPerformTransactionDto.params?.account?.selected_sport;
 
     logger.info(
       `LOOK new ADDED field is here in checkPerformTransaction: ${selectedService}`,
@@ -142,7 +143,9 @@ export class PaymeService {
     const transId = createTransactionDto.params?.id;
 
     const selectedService =
-      createTransactionDto.params?.account?.selected_service ?? 'yulduz';
+      createTransactionDto.params?.account?.selected_service ??
+      createTransactionDto.params?.account?.selected_sport ??
+      'yulduz';
 
     logger.info(
       `LOOK new ADDED field is here in createTransaction: ${selectedService}`,

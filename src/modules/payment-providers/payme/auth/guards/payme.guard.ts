@@ -36,9 +36,13 @@ export class PaymeBasicAuthGuard implements CanActivate {
 
       const isValidUsername =
         this.configService.get<string>('PAYME_LOGIN') === username;
-      // ! production mode da passwordni o'zgartishni unutmang
-      const isValidPassword =
-        this.configService.get<string>('PAYME_PASSWORD') === password;
+      // ! Payme test va production parollarini birdek qo'llab-quvvatlaymiz
+      const allowedPasswords = [
+        this.configService.get<string>('PAYME_PASSWORD'),
+        this.configService.get<string>('PAYME_PASSWORD_TEST'),
+      ].filter((value): value is string => !!value?.length);
+
+      const isValidPassword = allowedPasswords.includes(password);
 
       if (!isValidUsername || !isValidPassword) {
         response.status(200).send({
@@ -64,6 +68,8 @@ export class PaymeBasicAuthGuard implements CanActivate {
   }
 
   private decodeToken(token: string) {
-    return token?.length > 0 ? atob(token) : undefined;
+    return token?.length > 0
+      ? Buffer.from(token, 'base64').toString('utf8')
+      : undefined;
   }
 }

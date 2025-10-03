@@ -20,7 +20,10 @@ export class PaymeController {
   @HttpCode(HttpStatus.OK)
   async handleTransactionMethods(@Body() reqBody: RequestBody) {
     logger.info(
-      `I am being called with reqBody in PaymeController: ${JSON.stringify(reqBody)}`,
+      `🔥 Payme webhook called! Method: ${reqBody.method}`,
+    );
+    logger.info(
+      `🔥 Full Payme request body: ${JSON.stringify(reqBody, null, 2)}`,
     );
     return await this.paymeService.handleTransactionMethods(reqBody);
   }

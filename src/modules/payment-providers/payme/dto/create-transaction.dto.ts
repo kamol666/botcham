@@ -10,6 +10,7 @@ export class CreateTransactionDto {
       user_id: string;
       plan_id: string;
       selected_service?: string;
+      selected_sport?: string;
     };
   };
 }
