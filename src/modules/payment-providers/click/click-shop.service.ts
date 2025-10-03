@@ -9,7 +9,7 @@ import { getClickRedirectLink } from '../../../shared/generators/click-redirect-
 export class ClickShopService {
   private readonly logger = new Logger(ClickShopService.name);
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) { }
 
   async createPaymentSession(createPaymentDto: {
     userId: string;
@@ -85,6 +85,40 @@ export class ClickShopService {
     return {
       payment_url: paymentUrl,
     };
+  }
+
+  async createDirectPaymentLink(createPaymentDto: {
+    userId: string;
+    planId: string;
+    selectedService?: string;
+  }) {
+    try {
+      const { userId, planId, selectedService } = createPaymentDto;
+
+      this.logger.log('Click to\'g\'ridan-to\'g\'ri to\'lov linki yaratilmoqda', {
+        userId,
+        planId,
+      });
+
+      const plan = await Plan.findById(planId);
+      if (!plan) {
+        throw new Error('Plan topilmadi');
+      }
+
+      const paymentUrl = getClickRedirectLink({
+        amount: plan.price,
+        planId: plan._id.toString(),
+        userId: userId,
+        selectedService: selectedService ?? 'yulduz',
+      });
+
+      return {
+        payment_url: paymentUrl,
+      };
+    } catch (error) {
+      this.logger.error('Click to\'g\'ridan-to\'g\'ri link yaratishda xatolik', error);
+      throw error;
+    }
   }
 
   private generateSecureToken(): string {

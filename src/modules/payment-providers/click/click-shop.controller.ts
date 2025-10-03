@@ -4,7 +4,7 @@ import { ClickShopService } from './click-shop.service';
 
 @Controller('click-shop')
 export class ClickShopController {
-  constructor(private readonly clickShopService: ClickShopService) {}
+  constructor(private readonly clickShopService: ClickShopService) { }
 
   @Post('create-payment-session')
   async createPaymentSession(@Body() createPaymentDto: any) {
@@ -26,14 +26,17 @@ export class ClickShopController {
   async createPaymentAndRedirect(@Query() query: any, @Res() res: Response) {
     try {
       const { userId, planId, selectedService } = query;
-      const session = await this.clickShopService.createPaymentSession({
+
+      // To'g'ridan-to'g'ri Click linkini generatsiya qilish
+      const result = await this.clickShopService.createDirectPaymentLink({
         userId,
         planId,
-        selectedService,
+        selectedService
       });
 
-      return res.redirect(session.redirect_url);
+      return res.redirect(result.payment_url);
     } catch (error) {
+      console.error('Payment redirect error:', error);
       return res.redirect(`https://t.me/n17kamolBot?start=payment_error`);
     }
   }
@@ -44,6 +47,7 @@ export class ClickShopController {
       const result = await this.clickShopService.createPaymentFromSession(sessionToken);
       return res.redirect(result.payment_url);
     } catch (error) {
+      console.error('Click payment initiation error:', error);
       return res.redirect(`https://t.me/n17kamolBot?start=payment_error`);
     }
   }

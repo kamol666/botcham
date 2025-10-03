@@ -9,7 +9,7 @@ export class CreateTransactionDto {
     account: {
       user_id: string;
       plan_id: string;
-      selected_sport?: string;
+      selected_service?: string;
     };
   };
 }

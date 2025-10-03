@@ -142,7 +142,7 @@ export class PaymeService {
     const transId = createTransactionDto.params?.id;
 
     const selectedService =
-      createTransactionDto.params?.account?.selected_sport;
+      createTransactionDto.params?.account?.selected_service ?? 'yulduz';
 
     logger.info(
       `LOOK new ADDED field is here in createTransaction: ${selectedService}`,
@@ -265,7 +265,7 @@ export class PaymeService {
         id: transId,
       };
     }
-    logger.info(`Selected sport before createTransaction: ${selectedService}`);
+    logger.info(`Selected service before createTransaction: ${selectedService}`);
 
     const newTransaction = await Transaction.create({
       transId: createTransactionDto.params.id,

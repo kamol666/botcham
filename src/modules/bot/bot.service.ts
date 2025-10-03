@@ -1022,33 +1022,18 @@ ${expirationLabel} ${subscriptionEndDate}`;
       planId: plan._id as string,
       amount: plan.price,
       userId: userId,
+      selectedService,
     });
 
     let clickShopUrl: string;
 
-    try {
-      const sessionToken = randomBytes(32).toString('hex');
-      await PaymentSession.create({
-        sessionToken,
-        userId,
-        planId: plan._id.toString(),
-        selectedService,
-        amount: plan.price,
-        provider: 'click',
-        status: 'pending',
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
-      });
-
-      clickShopUrl = `${config.BASE_URL}/api/click-shop/initiate-payment/${sessionToken}`;
-    } catch (error) {
-      logger.error('Click sessiya yaratishda xatolik', error);
-      clickShopUrl = getClickRedirectLink({
-        amount: plan.price,
-        planId: plan._id as string,
-        userId,
-        selectedService,
-      });
-    }
+    // To'g'ridan-to'g'ri Click linkini ishlatamiz
+    clickShopUrl = getClickRedirectLink({
+      amount: plan.price,
+      planId: plan._id as string,
+      userId,
+      selectedService,
+    });
     const uzcardOneTimePaymentLink = `${config.BASE_URL}/api/uzcard-onetime-api/card-form?userId=${userId}&planId=${plan._id}&selectedService=${selectedService}`;
 
     return new InlineKeyboard()
