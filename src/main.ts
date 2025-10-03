@@ -12,7 +12,17 @@ async function bootstrap() {
 
   // Get the config service to access environment variables properly
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('APP_PORT', 8988);
+
+  // ENV fayldan port va IP ni to'g'ri o'qish
+  const port = parseInt(configService.get<string>('APP_PORT') || '8989', 10);
+  const serverIP = configService.get<string>('SERVER_IP') || '0.0.0.0';
+  const baseURL = configService.get<string>('BASE_URL');
+
+  console.log(`🔍 ENV APP_PORT: ${process.env.APP_PORT}`);
+  console.log(`🔍 ENV SERVER_IP: ${process.env.SERVER_IP}`);
+  console.log(`🔍 ENV BASE_URL: ${process.env.BASE_URL}`);
+  console.log(`🔍 Final port: ${port}`);
+  console.log(`🔍 Final server IP: ${serverIP}`);
 
   app.setGlobalPrefix('api');
 
@@ -27,20 +37,21 @@ async function bootstrap() {
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
-  logger.info(`Starting application on port: ${port}`);
+  
+  logger.info(`Starting application on ${serverIP}:${port}`);
 
   try {
-    await app.listen(port, '0.0.0.0'); // Explicitly bind to all interfaces
-    const appUrl = await app.getUrl();
-    logger.info(`✅ Application successfully started on: ${appUrl}`);
-    console.log(`✅ Application successfully started on: ${appUrl}`);
+    // ENV fayldan olingan IP da listen qilish
+    await app.listen(port, serverIP);
 
-    // Verify the port is actually listening
-    console.log(
-      `🔍 Server should be accessible at: http://localhost:${port}/api`,
-    );
+    logger.info(`✅ Server muvaffaqiyatli ishga tushdi: ${baseURL}`);
+    console.log(`✅ Server muvaffaqiyatli ishga tushdi: ${baseURL}`);
+    console.log(`🚀 Local: http://localhost:${port}/api`);
+    console.log(`🌐 Network: ${baseURL}/api`);
+    console.log(`📞 Click callback: ${baseURL}/api/click`);
+    console.log(`💳 Payme callback: ${baseURL}/api/payme`);
   } catch (error) {
-    logger.error(`❌ Failed to start application on port ${port}:`, error);
+    logger.error(`❌ Failed to start application on ${serverIP}:${port}:`, error);
     throw error;
   }
 }
