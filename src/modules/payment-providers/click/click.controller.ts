@@ -13,23 +13,17 @@ export class ClickController {
   @HttpCode(HttpStatus.OK)
   async handleMerchantTransactions(@Req() req: any) {
     try {
-      const clickReqBody = req.body;
+      const clickReqBody = req.body as ClickRequest;
       logger.info(`Click callback received: ${JSON.stringify(clickReqBody)}`);
 
-      // Oddiy javob qaytarish
-      return {
-        click_trans_id: clickReqBody.click_trans_id || 0,
-        merchant_trans_id: clickReqBody.merchant_trans_id || '',
-        error: 0,
-        error_note: "Success"
-      };
+      return await this.clickService.handleMerchantTransactions(clickReqBody);
     } catch (error) {
       logger.error(`Click callback error: ${error}`);
       return {
         click_trans_id: 0,
         merchant_trans_id: '',
         error: -1,
-        error_note: "Error"
+        error_note: 'Error',
       };
     }
   }

@@ -13,7 +13,7 @@ import logger from '../../../shared/utils/logger';
 
 @Controller('payme')
 export class PaymeController {
-  constructor(private readonly paymeService: PaymeService) {}
+  constructor(private readonly paymeService: PaymeService) { }
 
   @Post()
   @UseGuards(PaymeBasicAuthGuard)
