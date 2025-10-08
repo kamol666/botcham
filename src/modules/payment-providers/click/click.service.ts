@@ -74,9 +74,9 @@ export class ClickService {
     const amount = clickReqBody.amount;
     const transId = clickReqBody.click_trans_id + '';
     const signString = clickReqBody.sign_string;
-    const signTime = new Date(clickReqBody.sign_time).toISOString();
+    const signTime = clickReqBody.sign_time;
 
-    // MD5 hash generatsiyasi - sportsuz bot kabi
+    // MD5 hash generatsiyasi 
     const myMD5Hash = md5(
       transId +
       clickReqBody.service_id +
@@ -84,11 +84,16 @@ export class ClickService {
       planId +
       amount +
       clickReqBody.action +
-      clickReqBody.sign_time,
+      signTime,
     );
 
     if (signString !== myMD5Hash) {
-      logger.warn('Signature validation failed', { transId });
+      logger.warn('Signature validation failed', {
+        transId,
+        received: signString,
+        calculated: myMD5Hash,
+        string_to_hash: transId + clickReqBody.service_id + this.secretKey + planId + amount + clickReqBody.action + signTime
+      });
       return {
         error: ClickError.SignFailed,
         error_note: 'Invalid sign_string',
@@ -146,7 +151,7 @@ export class ClickService {
     const error = clickReqBody.error;
     const signString = clickReqBody.sign_string;
 
-    // MD5 hash generatsiyasi - sportsuz bot kabi (complete uchun)
+    // MD5 hash generatsiyasi 
     const myMD5Hash = md5(
       transId +
       serviceId +
@@ -159,6 +164,12 @@ export class ClickService {
     );
 
     if (signString !== myMD5Hash) {
+      logger.warn('Complete signature validation failed', {
+        transId,
+        received: signString,
+        calculated: myMD5Hash,
+        string_to_hash: transId + serviceId + this.secretKey + planId + prepareId + amount + clickReqBody.action + signTime
+      });
       return {
         error: ClickError.SignFailed,
         error_note: 'Invalid sign_string',
