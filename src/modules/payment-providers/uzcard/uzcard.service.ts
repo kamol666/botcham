@@ -39,7 +39,7 @@ export class UzCardApiService {
 
 
 
- constructor(private readonly botService: BotService) {}
+  constructor(private readonly botService: BotService) { }
 
   // getBotService(): BotService {
   //       if (!this.botService) {
@@ -360,7 +360,7 @@ export class UzCardApiService {
       provider: PaymentProvider.UZCARD,
       paymentType: PaymentTypes.SUBSCRIPTION,
       transId: customRandomId,
-      amount: '5555',
+      amount: plan.price,
       status: TransactionStatus.PENDING,
       userId: user._id,
       planId: plan,
@@ -369,7 +369,7 @@ export class UzCardApiService {
     const payload = {
       userId: card.userId,
       cardId: card.cardToken,
-      amount: 5555,
+      amount: plan.price,
       extraId: customRandomId,
       sendOtp: false,
     };
@@ -437,6 +437,7 @@ export class UzCardApiService {
         status: 'active',
         subscribedBy: CardType.UZCARD,
         paidBy: CardType.UZCARD,
+        paidAmount: plan.price,
         hasReceivedFreeBonus: true,
       });
 

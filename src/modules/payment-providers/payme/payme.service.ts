@@ -28,7 +28,7 @@ export class PaymeService {
   constructor(
     private readonly configService: ConfigService,
     private readonly botService: BotService,
-  ) {}
+  ) { }
 
   async handleTransactionMethods(reqBody: RequestBody) {
     const method = reqBody.method;
@@ -117,19 +117,16 @@ export class PaymeService {
       };
     }
 
-    if (checkPerformTransactionDto.params.amount === plan.price) {
-      return {
-        result: {
-          allow: true,
-        },
-      };
-    }
-    if (plan.price !== checkPerformTransactionDto.params.amount / 100) {
-      console.log("Xato shuyerda bo'lishi mumkin");
+    // Amount tiyin da keladi, plan.price so'm da
+    const amountInSom = checkPerformTransactionDto.params.amount / 100;
+
+    if (plan.price !== amountInSom) {
+      logger.warn(`Amount mismatch: plan.price=${plan.price} som, received=${amountInSom} som (${checkPerformTransactionDto.params.amount} tiyin)`);
       return {
         error: PaymeError.InvalidAmount,
       };
     }
+
     return {
       result: {
         allow: true,
@@ -252,7 +249,7 @@ export class PaymeService {
     const checkTransaction: CheckPerformTransactionDto = {
       method: TransactionMethods.CheckPerformTransaction,
       params: {
-        amount: plan.price,
+        amount: plan.price * 100, // plan.price so'mdan tiyinga o'tkazish (5555 so'm = 555500 tiyin)
         account: {
           plan_id: planId,
           user_id: userId,

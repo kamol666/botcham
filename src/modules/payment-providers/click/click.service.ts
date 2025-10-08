@@ -211,10 +211,16 @@ export class ClickService {
       };
     }
 
-    if (parseInt(`${amount}`) !== plan.price) {
+    // Amount tiyin da keladi, plan price so'mda. Tiyinni so'mga o'tkazamiz yoki plan priceni tiyinga
+    // plan.price so'mda saqlanadi (masalan: 5555), amount tiyin da keladi (masalan: 555500)
+    // Shuning uchun plan.price * 100 qilamiz
+    const planPriceInTiyns = plan.price * 100;
+
+    if (parseInt(`${amount}`) !== planPriceInTiyns) {
+      logger.warn(`Amount mismatch: received ${amount} tiyin, expected ${planPriceInTiyns} tiyin (plan price: ${plan.price} so'm)`);
       return {
         error: ClickError.InvalidAmount,
-        error_note: 'Invalid amount',
+        error_note: `Invalid amount. Expected: ${planPriceInTiyns} tiyin, received: ${amount} tiyin`,
       };
     }
 

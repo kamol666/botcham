@@ -446,7 +446,7 @@ export class ClickSubsApiService {
                     provider: PaymentProvider.CLICK,
                     paymentType: PaymentTypes.SUBSCRIPTION,
                     transId: paymentId ? paymentId : customRandomId,
-                    amount: '5555',
+                    amount: plan.price,
                     status: TransactionStatus.PAID,
                     userId: requestBody.userId,
                     planId: requestBody.planId,
@@ -470,6 +470,7 @@ export class ClickSubsApiService {
                 isActive: true,
                 autoRenew: true,
                 status: 'active',
+                paidAmount: plan.price,
                 paidBy: CardType.CLICK,
                 subscribedBy: CardType.CLICK,
                 hasReceivedFreeBonus: true
