@@ -15,13 +15,10 @@ export function getClickRedirectLink(params: ClickRedirectParams) {
   const merchantId = configService.get<string>('CLICK_MERCHANT_ID');
   const selectedService = params.selectedService ?? 'yulduz';
 
-  // So'mni tiyinga o'tkazish (5555 so'm = 555500 tiyin)
-  const amountInTiyns = params.amount * 100;
-
   const searchParams = new URLSearchParams({
     service_id: String(serviceId),
     merchant_id: String(merchantId),
-    amount: String(amountInTiyns),
+    amount: String(params.amount),
     transaction_param: params.planId,
     return_url: BOT_URL,
   });

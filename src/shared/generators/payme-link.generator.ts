@@ -13,7 +13,7 @@ const PAYME_CHECKOUT_URL = 'https://checkout.paycom.uz';
 
 export function generatePaymeLink(params: PaymeLinkGeneratorParams): string {
   const merchantId = config.PAYME_MERCHANT_ID;
-  const amountInTiyns = params.amount * 100;
+  const amountInTiyns = params.amount * 100; // So'mdan tiyinga o'tkazish (sportsuz bot kabi)
   const selectedService =
     params.selectedService ?? params.selectedSport ?? 'yulduz';
 

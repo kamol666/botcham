@@ -117,7 +117,7 @@ export class PaymeService {
       };
     }
 
-    // Amount tiyin da keladi, plan.price so'm da
+    // Amount tiyin da keladi, plan.price so'm da (sportsuz bot kabi)
     const amountInSom = checkPerformTransactionDto.params.amount / 100;
 
     if (plan.price !== amountInSom) {
@@ -181,8 +181,10 @@ export class PaymeService {
 
     if (createTransactionDto.params.amount / 100 !== plan.price) {
       console.log(
-        'the amount in sum is: ',
+        'the amount in som is: ',
         createTransactionDto.params.amount / 100,
+        'plan price:',
+        plan.price,
       );
       return {
         error: PaymeError.InvalidAmount,
