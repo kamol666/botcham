@@ -23,8 +23,8 @@ export function getClickRedirectLink(params: ClickRedirectParams) {
     return_url: BOT_URL,
   });
 
-  searchParams.append('additional_param2', params.userId);
-  searchParams.append('additional_param3', selectedService);
+  searchParams.append('additional_param1', params.userId);
+  searchParams.append('additional_param2', selectedService);
 
   return `${CLICK_URL}/services/pay?${searchParams.toString()}`;
 }

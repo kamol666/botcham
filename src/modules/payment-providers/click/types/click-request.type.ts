@@ -4,6 +4,7 @@ export type ClickRequest = {
   click_paydoc_id: number;
   merchant_user_id?: string;
   merchant_trans_id: string;
+  param1?: string;
   param2?: string;
   param3?: string;
   param4?: string;

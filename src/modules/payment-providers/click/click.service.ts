@@ -21,6 +21,7 @@ export class ClickService {
   private readonly serviceId: string;
   private readonly merchantId: string;
   private readonly merchantUserId: string;
+  private readonly objectIdRegex = /^[0-9a-fA-F]{24}$/;
 
   constructor(
     private readonly configService: ConfigService,
@@ -34,6 +35,34 @@ export class ClickService {
     this.serviceId = this.configService.get<string>('CLICK_SERVICE_ID');
     this.merchantId = this.configService.get<string>('CLICK_MERCHANT_ID');
     this.merchantUserId = this.configService.get<string>('CLICK_MERCHANT_USER_ID');
+  }
+
+  private extractUserAndService(clickReqBody: ClickRequest): {
+    userId: string | null;
+    selectedService: string;
+  } {
+    const candidates = [
+      clickReqBody.param1,
+      clickReqBody.param2,
+      clickReqBody.param3,
+      clickReqBody.param4,
+    ];
+
+    const userId =
+      candidates.find(
+        (value): value is string =>
+          typeof value === 'string' && this.objectIdRegex.test(value),
+      ) ?? null;
+
+    const selectedService =
+      candidates.find(
+        (value) =>
+          typeof value === 'string' &&
+          value.trim().length > 0 &&
+          (!userId || value !== userId),
+      ) ?? 'yulduz';
+
+    return { userId, selectedService };
   }
 
   // Helper metod: Oddiy MD5 hash yaratish
@@ -70,8 +99,7 @@ export class ClickService {
     logger.info('Preparing transaction', { clickReqBody });
 
     const planId = clickReqBody.merchant_trans_id;
-    const selectedService = clickReqBody.param2 || 'yulduz'; // param2 = selectedService (teskari kelayapti)
-    const userId = clickReqBody.param3; // param3 = userId (teskari kelayapti)
+    const { userId, selectedService } = this.extractUserAndService(clickReqBody);
     const amount = clickReqBody.amount;
     const amountForSignature = clickReqBody.amountForSignature ?? `${amount}`;
     const transId = clickReqBody.click_trans_id + '';
@@ -108,6 +136,14 @@ export class ClickService {
       return {
         error: ClickError.SignFailed,
         error_note: 'Invalid sign_string',
+      };
+    }
+
+    if (!userId) {
+      logger.error('Missing userId in Click prepare request', { clickReqBody });
+      return {
+        error: ClickError.UserNotFound,
+        error_note: 'Invalid userId',
       };
     }
 
@@ -153,8 +189,7 @@ export class ClickService {
     logger.info('Completing transaction', { clickReqBody });
 
     const planId = clickReqBody.merchant_trans_id;
-    const selectedService = clickReqBody.param2 || 'yulduz'; // param2 = selectedService (teskari kelayapti)
-    const userId = clickReqBody.param3; // param3 = userId (teskari kelayapti)
+    const { userId, selectedService } = this.extractUserAndService(clickReqBody);
     const prepareId = clickReqBody.merchant_prepare_id;
     const transId = clickReqBody.click_trans_id + '';
     const serviceId = clickReqBody.service_id;
@@ -195,6 +230,14 @@ export class ClickService {
       return {
         error: ClickError.SignFailed,
         error_note: 'Invalid sign_string',
+      };
+    }
+
+    if (!userId) {
+      logger.error('Missing userId in Click complete request', { clickReqBody });
+      return {
+        error: ClickError.UserNotFound,
+        error_note: 'Invalid userId',
       };
     }
 
