@@ -46,6 +46,8 @@ export class ClickService {
 
   async handleMerchantTransactions(clickReqBody: ClickRequest) {
     const actionType = +clickReqBody.action;
+    const amountForSignature = `${clickReqBody.amount}`;
+    clickReqBody.amountForSignature = amountForSignature;
     clickReqBody.amount = parseFloat(clickReqBody.amount + '');
 
     logger.info(
@@ -72,27 +74,37 @@ export class ClickService {
     const userId = clickReqBody.param2 || clickReqBody.param3;
     const selectedService = clickReqBody.param3 || 'yulduz';
     const amount = clickReqBody.amount;
+    const amountForSignature = clickReqBody.amountForSignature ?? `${amount}`;
     const transId = clickReqBody.click_trans_id + '';
     const signString = clickReqBody.sign_string;
     const signTime = clickReqBody.sign_time;
 
+    // BATAFSIL DEBUG LOG
+    console.log('=== CLICK SIGNATURE DEBUG ===');
+    console.log('transId:', transId);
+    console.log('service_id:', clickReqBody.service_id);
+    console.log('secretKey:', this.secretKey);
+    console.log('planId:', planId);
+    console.log('amount:', amount);
+    console.log('action:', clickReqBody.action);
+    console.log('signTime:', signTime);
+    console.log('received_sign_string:', signString);
+
     // MD5 hash generatsiyasi 
-    const myMD5Hash = md5(
-      transId +
-      clickReqBody.service_id +
-      this.secretKey +
-      planId +
-      amount +
-      clickReqBody.action +
-      signTime,
-    );
+    const concatString = transId + clickReqBody.service_id + this.secretKey + planId + amountForSignature + clickReqBody.action + signTime;
+    const myMD5Hash = md5(concatString);
+
+    console.log('concat_string:', concatString);
+    console.log('calculated_md5:', myMD5Hash);
+    console.log('signatures_match:', signString === myMD5Hash);
+    console.log('=== END DEBUG ===');
 
     if (signString !== myMD5Hash) {
       logger.warn('Signature validation failed', {
         transId,
         received: signString,
         calculated: myMD5Hash,
-        string_to_hash: transId + clickReqBody.service_id + this.secretKey + planId + amount + clickReqBody.action + signTime
+        string_to_hash: concatString
       });
       return {
         error: ClickError.SignFailed,
@@ -147,28 +159,38 @@ export class ClickService {
     const transId = clickReqBody.click_trans_id + '';
     const serviceId = clickReqBody.service_id;
     const amount = clickReqBody.amount;
+    const amountForSignature = clickReqBody.amountForSignature ?? `${amount}`;
     const signTime = clickReqBody.sign_time;
     const error = clickReqBody.error;
     const signString = clickReqBody.sign_string;
 
+    // BATAFSIL DEBUG LOG COMPLETE
+    console.log('=== CLICK COMPLETE SIGNATURE DEBUG ===');
+    console.log('transId:', transId);
+    console.log('service_id:', serviceId);
+    console.log('secretKey:', this.secretKey);
+    console.log('planId:', planId);
+    console.log('prepareId:', prepareId);
+    console.log('amount:', amount);
+    console.log('action:', clickReqBody.action);
+    console.log('signTime:', signTime);
+    console.log('received_sign_string:', signString);
+
     // MD5 hash generatsiyasi 
-    const myMD5Hash = md5(
-      transId +
-      serviceId +
-      this.secretKey +
-      planId +
-      prepareId +
-      amount +
-      clickReqBody.action +
-      signTime,
-    );
+    const concatString = transId + serviceId + this.secretKey + planId + prepareId + amountForSignature + clickReqBody.action + signTime;
+    const myMD5Hash = md5(concatString);
+
+    console.log('concat_string:', concatString);
+    console.log('calculated_md5:', myMD5Hash);
+    console.log('signatures_match:', signString === myMD5Hash);
+    console.log('=== END COMPLETE DEBUG ===');
 
     if (signString !== myMD5Hash) {
       logger.warn('Complete signature validation failed', {
         transId,
         received: signString,
         calculated: myMD5Hash,
-        string_to_hash: transId + serviceId + this.secretKey + planId + prepareId + amount + clickReqBody.action + signTime
+        string_to_hash: concatString
       });
       return {
         error: ClickError.SignFailed,
