@@ -70,8 +70,8 @@ export class ClickService {
     logger.info('Preparing transaction', { clickReqBody });
 
     const planId = clickReqBody.merchant_trans_id;
-    const userId = clickReqBody.param2 || clickReqBody.param3;
-    const selectedService = clickReqBody.param3 || 'yulduz';
+    const selectedService = clickReqBody.param2 || 'yulduz'; // param2 = selectedService (teskari kelayapti)
+    const userId = clickReqBody.param3; // param3 = userId (teskari kelayapti)
     const amount = clickReqBody.amount;
     const amountForSignature = clickReqBody.amountForSignature ?? `${amount}`;
     const transId = clickReqBody.click_trans_id + '';
@@ -153,7 +153,8 @@ export class ClickService {
     logger.info('Completing transaction', { clickReqBody });
 
     const planId = clickReqBody.merchant_trans_id;
-    const userId = clickReqBody.param2 || clickReqBody.param3;
+    const selectedService = clickReqBody.param2 || 'yulduz'; // param2 = selectedService (teskari kelayapti)
+    const userId = clickReqBody.param3; // param3 = userId (teskari kelayapti)
     const prepareId = clickReqBody.merchant_prepare_id;
     const transId = clickReqBody.click_trans_id + '';
     const serviceId = clickReqBody.service_id;
