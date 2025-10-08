@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { ClickRequest } from './types/click-request.type';
 import { ClickAction, ClickError } from './enums';
 import logger from '../../../shared/utils/logger';
-import * as md5 from 'md5';
 import {
   PaymentProvider,
   PaymentTypes,
@@ -92,7 +91,7 @@ export class ClickService {
 
     // MD5 hash generatsiyasi 
     const concatString = transId + clickReqBody.service_id + this.secretKey + planId + amountForSignature + clickReqBody.action + signTime;
-    const myMD5Hash = md5(concatString);
+    const myMD5Hash = this.createSimpleMD5Hash(concatString);
 
     console.log('concat_string:', concatString);
     console.log('calculated_md5:', myMD5Hash);
@@ -178,7 +177,7 @@ export class ClickService {
 
     // MD5 hash generatsiyasi 
     const concatString = transId + serviceId + this.secretKey + planId + prepareId + amountForSignature + clickReqBody.action + signTime;
-    const myMD5Hash = md5(concatString);
+    const myMD5Hash = this.createSimpleMD5Hash(concatString);
 
     console.log('concat_string:', concatString);
     console.log('calculated_md5:', myMD5Hash);
