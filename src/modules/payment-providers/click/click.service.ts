@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ClickRequest } from './types/click-request.type';
 import { ClickAction, ClickError } from './enums';
 import logger from '../../../shared/utils/logger';
-import { generateMD5 } from '../../../shared/utils/hashing/hasher.helper';
+import * as md5 from 'md5';
 import {
   PaymentProvider,
   PaymentTypes,
@@ -76,17 +76,16 @@ export class ClickService {
     const signString = clickReqBody.sign_string;
     const signTime = new Date(clickReqBody.sign_time).toISOString();
 
-    const myMD5Params = {
-      clickTransId: transId,
-      serviceId: clickReqBody.service_id,
-      secretKey: this.secretKey,
-      merchantTransId: planId,
-      amount: amount,
-      action: clickReqBody.action,
-      signTime: clickReqBody.sign_time,
-    };
-
-    const myMD5Hash = generateMD5(myMD5Params);
+    // MD5 hash generatsiyasi - sportsuz bot kabi
+    const myMD5Hash = md5(
+      transId +
+      clickReqBody.service_id +
+      this.secretKey +
+      planId +
+      amount +
+      clickReqBody.action +
+      clickReqBody.sign_time,
+    );
 
     if (signString !== myMD5Hash) {
       logger.warn('Signature validation failed', { transId });
@@ -147,18 +146,17 @@ export class ClickService {
     const error = clickReqBody.error;
     const signString = clickReqBody.sign_string;
 
-    const myMD5Params = {
-      clickTransId: transId,
-      serviceId,
-      secretKey: this.secretKey,
-      merchantTransId: planId,
-      merchantPrepareId: prepareId,
-      amount,
-      action: clickReqBody.action,
+    // MD5 hash generatsiyasi - sportsuz bot kabi (complete uchun)
+    const myMD5Hash = md5(
+      transId +
+      serviceId +
+      this.secretKey +
+      planId +
+      prepareId +
+      amount +
+      clickReqBody.action +
       signTime,
-    };
-
-    const myMD5Hash = generateMD5(myMD5Params);
+    );
 
     if (signString !== myMD5Hash) {
       return {
