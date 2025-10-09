@@ -41,14 +41,14 @@ export class ClickService {
     userId: string | null;
     selectedService: string;
   } {
-    // additional_param2 -> param2 = userId
-    const userId = clickReqBody.param2 && this.objectIdRegex.test(clickReqBody.param2)
-      ? clickReqBody.param2
+    // URL'ga qarab: additional_param3 -> param3 = userId
+    const userId = clickReqBody.param3 && this.objectIdRegex.test(clickReqBody.param3)
+      ? clickReqBody.param3
       : null;
 
-    // additional_param3 -> param3 = selectedService  
-    const selectedService = (clickReqBody.param3 && clickReqBody.param3.trim().length > 0)
-      ? clickReqBody.param3
+    // additional_param2 -> param2 = selectedService (agar mavjud bo'lsa)
+    const selectedService = (clickReqBody.param2 && clickReqBody.param2.trim().length > 0)
+      ? clickReqBody.param2
       : 'yulduz';
 
     console.log('=== EXTRACT USER AND SERVICE DEBUG ===');
