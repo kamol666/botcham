@@ -41,34 +41,43 @@ export class ClickService {
     userId: string | null;
     selectedService: string;
   } {
-    const candidates = [
-      clickReqBody.param1,
-      clickReqBody.param2,
-      clickReqBody.param3,
-      clickReqBody.param4,
-    ];
+    // additional_param2 -> param2 = userId
+    const userId = clickReqBody.param2 && this.objectIdRegex.test(clickReqBody.param2)
+      ? clickReqBody.param2
+      : null;
 
-    const userId =
-      candidates.find(
-        (value): value is string =>
-          typeof value === 'string' && this.objectIdRegex.test(value),
-      ) ?? null;
+    // additional_param3 -> param3 = selectedService  
+    const selectedService = (clickReqBody.param3 && clickReqBody.param3.trim().length > 0)
+      ? clickReqBody.param3
+      : 'yulduz';
 
-    const selectedService =
-      candidates.find(
-        (value) =>
-          typeof value === 'string' &&
-          value.trim().length > 0 &&
-          (!userId || value !== userId),
-      ) ?? 'yulduz';
+    console.log('=== EXTRACT USER AND SERVICE DEBUG ===');
+    console.log('param1:', clickReqBody.param1);
+    console.log('param2:', clickReqBody.param2);
+    console.log('param3:', clickReqBody.param3);
+    console.log('param4:', clickReqBody.param4);
+    console.log('extracted userId:', userId);
+    console.log('extracted selectedService:', selectedService);
+    console.log('=== END EXTRACT DEBUG ===');
 
     return { userId, selectedService };
   }
 
-  // Helper metod: Oddiy MD5 hash yaratish
-  private createSimpleMD5Hash(data: string): string {
+
+  private generateMD5Hash(params: {
+    clickTransId: string;
+    serviceId: number;
+    secretKey: string;
+    merchantTransId: string;
+    merchantPrepareId?: number;
+    amount: number;
+    action: number;
+    signTime: string;
+  }): string {
+    const content = `${params.clickTransId}${params.serviceId}${params.secretKey}${params.merchantTransId}${params?.merchantPrepareId || ''}${params.amount}${params.action}${params.signTime}`;
+
     const hashFunc = createHash('md5');
-    hashFunc.update(data);
+    hashFunc.update(content);
     return hashFunc.digest('hex');
   }
 
@@ -98,13 +107,27 @@ export class ClickService {
   async prepare(clickReqBody: ClickRequest) {
     logger.info('Preparing transaction', { clickReqBody });
 
+    // Parametrlarni batafsil log qilish
+    console.log('=== CLICK PREPARE PARAMETERS ===');
+    console.log('click_trans_id:', clickReqBody.click_trans_id);
+    console.log('service_id:', clickReqBody.service_id);
+    console.log('merchant_trans_id:', clickReqBody.merchant_trans_id);
+    console.log('amount:', clickReqBody.amount);
+    console.log('action:', clickReqBody.action);
+    console.log('sign_time:', clickReqBody.sign_time);
+    console.log('sign_string:', clickReqBody.sign_string);
+    console.log('param1:', clickReqBody.param1);
+    console.log('param2:', clickReqBody.param2);
+    console.log('param3:', clickReqBody.param3);
+    console.log('param4:', clickReqBody.param4);
+    console.log('==================================');
+
     const planId = clickReqBody.merchant_trans_id;
     const { userId, selectedService } = this.extractUserAndService(clickReqBody);
     const amount = clickReqBody.amount;
-    const amountForSignature = clickReqBody.amountForSignature ?? `${amount}`;
     const transId = clickReqBody.click_trans_id + '';
     const signString = clickReqBody.sign_string;
-    const signTime = clickReqBody.sign_time;
+    const signTime = new Date(clickReqBody.sign_time).toISOString();
 
     // BATAFSIL DEBUG LOG
     console.log('=== CLICK SIGNATURE DEBUG ===');
@@ -117,21 +140,31 @@ export class ClickService {
     console.log('signTime:', signTime);
     console.log('received_sign_string:', signString);
 
-    // MD5 hash generatsiyasi 
-    const concatString = transId + clickReqBody.service_id + this.secretKey + planId + amountForSignature + clickReqBody.action + signTime;
-    const myMD5Hash = this.createSimpleMD5Hash(concatString);
+    // MD5 hash generatsiyasi sportsuz bot singari
+    const myMD5Params = {
+      clickTransId: transId,
+      serviceId: clickReqBody.service_id,
+      secretKey: this.secretKey,
+      merchantTransId: planId,
+      amount: clickReqBody.amount,
+      action: clickReqBody.action,
+      signTime: signTime,
+    };
 
-    console.log('concat_string:', concatString);
+    const myMD5Hash = this.generateMD5Hash(myMD5Params);
+
+    console.log('concat_string:', `${transId}${clickReqBody.service_id}${this.secretKey}${planId}${clickReqBody.amount}${clickReqBody.action}${signTime}`);
     console.log('calculated_md5:', myMD5Hash);
     console.log('signatures_match:', signString === myMD5Hash);
     console.log('=== END DEBUG ===');
+
 
     if (signString !== myMD5Hash) {
       logger.warn('Signature validation failed', {
         transId,
         received: signString,
         calculated: myMD5Hash,
-        string_to_hash: concatString
+        string_to_hash: `${transId}${clickReqBody.service_id}${this.secretKey}${planId}${clickReqBody.amount}${clickReqBody.action}${signTime}`
       });
       return {
         error: ClickError.SignFailed,
@@ -188,13 +221,29 @@ export class ClickService {
   async complete(clickReqBody: ClickRequest) {
     logger.info('Completing transaction', { clickReqBody });
 
+    // Parametrlarni batafsil log qilish
+    console.log('=== CLICK COMPLETE PARAMETERS ===');
+    console.log('click_trans_id:', clickReqBody.click_trans_id);
+    console.log('service_id:', clickReqBody.service_id);
+    console.log('merchant_trans_id:', clickReqBody.merchant_trans_id);
+    console.log('merchant_prepare_id:', clickReqBody.merchant_prepare_id);
+    console.log('amount:', clickReqBody.amount);
+    console.log('action:', clickReqBody.action);
+    console.log('sign_time:', clickReqBody.sign_time);
+    console.log('sign_string:', clickReqBody.sign_string);
+    console.log('error:', clickReqBody.error);
+    console.log('param1:', clickReqBody.param1);
+    console.log('param2:', clickReqBody.param2);
+    console.log('param3:', clickReqBody.param3);
+    console.log('param4:', clickReqBody.param4);
+    console.log('==================================');
+
     const planId = clickReqBody.merchant_trans_id;
     const { userId, selectedService } = this.extractUserAndService(clickReqBody);
     const prepareId = clickReqBody.merchant_prepare_id;
     const transId = clickReqBody.click_trans_id + '';
     const serviceId = clickReqBody.service_id;
     const amount = clickReqBody.amount;
-    const amountForSignature = clickReqBody.amountForSignature ?? `${amount}`;
     const signTime = clickReqBody.sign_time;
     const error = clickReqBody.error;
     const signString = clickReqBody.sign_string;
@@ -211,11 +260,21 @@ export class ClickService {
     console.log('signTime:', signTime);
     console.log('received_sign_string:', signString);
 
-    // MD5 hash generatsiyasi 
-    const concatString = transId + serviceId + this.secretKey + planId + prepareId + amountForSignature + clickReqBody.action + signTime;
-    const myMD5Hash = this.createSimpleMD5Hash(concatString);
+    // MD5 hash generatsiyasi sportsuz bot singari
+    const myMD5Params = {
+      clickTransId: transId,
+      serviceId: serviceId,
+      secretKey: this.secretKey,
+      merchantTransId: planId,
+      merchantPrepareId: prepareId,
+      amount: clickReqBody.amount,
+      action: clickReqBody.action,
+      signTime: signTime,
+    };
 
-    console.log('concat_string:', concatString);
+    const myMD5Hash = this.generateMD5Hash(myMD5Params);
+
+    console.log('concat_string:', `${transId}${serviceId}${this.secretKey}${planId}${prepareId}${clickReqBody.amount}${clickReqBody.action}${signTime}`);
     console.log('calculated_md5:', myMD5Hash);
     console.log('signatures_match:', signString === myMD5Hash);
     console.log('=== END COMPLETE DEBUG ===');
@@ -225,7 +284,7 @@ export class ClickService {
         transId,
         received: signString,
         calculated: myMD5Hash,
-        string_to_hash: concatString
+        string_to_hash: `${transId}${serviceId}${this.secretKey}${planId}${prepareId}${clickReqBody.amount}${clickReqBody.action}${signTime}`
       });
       return {
         error: ClickError.SignFailed,
@@ -363,7 +422,7 @@ export class ClickService {
 
       // Auth uchun signature yaratish
       const signData = `${this.merchantUserId}${timestamp}${this.secretKey}`;
-      const signature = this.createSimpleMD5Hash(signData);
+      const signature = createHash('md5').update(signData).digest('hex');
 
       const authHeaders = {
         'Content-Type': 'application/json',
@@ -415,7 +474,7 @@ export class ClickService {
     try {
       const timestamp = Math.floor(Date.now() / 1000);
       const signData = `${this.merchantUserId}${timestamp}${this.secretKey}`;
-      const signature = this.createSimpleMD5Hash(signData);
+      const signature = createHash('md5').update(signData).digest('hex');
 
       const authHeaders = {
         'Content-Type': 'application/json',
